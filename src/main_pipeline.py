@@ -1,58 +1,62 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
 from pathlib import Path
 import copy
 import math
 import os
+import random
+import sys
+import time
 
 import numpy as np
 
 os.environ.setdefault("MPLBACKEND", "Agg")
 
-import build_graph as bg
-import rectangle_coverage as rc
-import segmentation as seg
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from src.algorithm_api import bg, conn_methods, rc, seg, seg_methods
+from src.configuration import DEFAULT_CONFIG_PATH, PipelineConfig, REPOSITORY_ROOT, RobotConfig, load_experiment_config
+from src.visualization import (
+    build_coverage_mask,
+    render_coverage_image,
+    save_coverage_png,
+    save_coverage_video,
+    save_traversal_order,
+)
 
 
-@dataclass
-class PipelineConfig:
-    map_path: str = "map_test1.png"
-    output_video_path: str = "pipeline.mp4"
-    segmentation_preview_path: str = "segmentation_preview.png"
-
-    pixel_size: float = 0.5
-    grid_size: int = 1
-    min_edge_length: float = 2.5
-    alpha: float = 0.5
-    beta: float = 2.0
-    candidate_top_k: int = 10
-
-    start_rect: int | None = None
-    # sample_rate: float = 20.0
-    sample_rate: float = 2.0
-
-
-def create_default_robot() -> rc.Robot:
+def create_robot(
+    config: RobotConfig,
+    work_speed_policy: str = "coverage_safe",
+) -> rc.Robot:
     return rc.Robot(
-        # disc_radius=0.25,
-        disc_radius=0.75,
-        arm_length=1.2,
-        car_width=0.8,
-        car_half_length=1.0,
-        pivot_to_car_center=0.3,
-        # speed_limit=1.0,
-        speed_limit=2.0,
-        angular_velocity_limit=30.0,
-        arm_angle_limit=(0, 90),
-        arm_angular_velocity_limit=90.0,
-        heading=0.0,
-        arm_angle=0.0,
+        disc_radius=config.disc_radius,
+        arm_length=config.arm_length,
+        car_width=config.car_width,
+        car_half_length=config.car_half_length,
+        pivot_to_car_center=config.pivot_to_car_center,
+        speed_limit=config.speed_limit,
+        angular_velocity_limit=config.angular_velocity_limit,
+        arm_angle_limit=config.arm_angle_limit,
+        arm_angular_velocity_limit=config.arm_angular_velocity_limit,
+        work_speed_policy=work_speed_policy,
+        heading=config.initial_heading,
+        arm_angle=config.initial_arm_angle,
         arm_angular_velocity=0.0,
         car_speed=0.0,
         car_angular_velocity=0.0,
-        car_position=(0.0, 0.0),
+        car_position=config.initial_car_position,
     )
+
+
+def create_default_robot() -> rc.Robot:
+    """Compatibility helper using the repository's default robot config."""
+    return create_robot(load_experiment_config().robot)
 
 
 def _rect_area(rect: bg.Rect) -> float:
@@ -75,9 +79,32 @@ def _to_rc_rect(rect: bg.Rect) -> rc.Rect:
     return rc.Rect(rect.x1, rect.y1, rect.x2, rect.y2)
 
 
+def _rectangle_partition_metrics(
+    rects: list[seg.Rect] | list[bg.Rect],
+    raw_map: np.ndarray,
+    pixel_size: float,
+) -> dict:
+    """Measure rectangle-union coverage independently of robot trajectory coverage."""
+    free_mask = raw_map == 255
+    total_free_px = int(np.sum(free_mask))
+    cover_count = seg.buildCoverCount(rects, raw_map.shape, pixel_size)
+    covered_free_px = int(np.sum((cover_count > 0) & free_mask))
+    overlap_free_px = int(np.sum((cover_count > 1) & free_mask))
+    covered_obstacle_px = int(np.sum((cover_count > 0) & ~free_mask))
+    return {
+        "total_free_px": total_free_px,
+        "covered_free_px": covered_free_px,
+        "uncovered_free_px": total_free_px - covered_free_px,
+        "overlap_free_px": overlap_free_px,
+        "covered_obstacle_px": covered_obstacle_px,
+        "free_coverage_ratio": covered_free_px / total_free_px if total_free_px else 0.0,
+        "free_overlap_ratio": overlap_free_px / total_free_px if total_free_px else 0.0,
+    }
+
+
 def _map_output_path(path_str: str) -> Path:
-    base_dir = Path(__file__).resolve().parent
-    return (base_dir / path_str).resolve()
+    path = Path(path_str)
+    return (path if path.is_absolute() else REPOSITORY_ROOT / path).resolve()
 
 
 def _choose_start_rect(rect_list: list[bg.Rect], start_rect: int | None) -> int:
@@ -218,6 +245,7 @@ def _append_turn_poses(
     robot: rc.Robot,
     target_heading: float,
     sample_rate: float,
+    motion_segments: list[rc.MotionSegment] | None = None,
 ) -> None:
     current_heading = robot.heading % 360
     target_heading = target_heading % 360
@@ -228,6 +256,18 @@ def _append_turn_poses(
 
     angular_speed = max(abs(robot.angular_velocity_limit), 1e-6)
     total_time = abs(delta) / angular_speed
+    if motion_segments is not None:
+        motion_segments.append(rc.MotionSegment(
+            phase="vehicle_turn",
+            coverage_active=False,
+            duration=total_time,
+            car_position_start=robot.car_position,
+            car_position_end=robot.car_position,
+            heading_start=current_heading,
+            heading_end=current_heading + delta,
+            arm_angle_start=robot.arm_angle,
+            arm_angle_end=robot.arm_angle,
+        ))
     steps = max(1, int(math.ceil(total_time * sample_rate)))
     signed_velocity = angular_speed if delta >= 0 else -angular_speed
 
@@ -253,6 +293,7 @@ def _append_move_poses(
     robot: rc.Robot,
     target_position: tuple[float, float],
     sample_rate: float,
+    motion_segments: list[rc.MotionSegment] | None = None,
 ) -> None:
     start = robot.car_position
     distance = math.dist(start, target_position)
@@ -262,6 +303,18 @@ def _append_move_poses(
 
     speed = max(abs(robot.speed_limit), 1e-6)
     total_time = distance / speed
+    if motion_segments is not None:
+        motion_segments.append(rc.MotionSegment(
+            phase="transition",
+            coverage_active=False,
+            duration=total_time,
+            car_position_start=start,
+            car_position_end=target_position,
+            heading_start=robot.heading,
+            heading_end=robot.heading,
+            arm_angle_start=robot.arm_angle,
+            arm_angle_end=robot.arm_angle,
+        ))
     steps = max(1, int(math.ceil(total_time * sample_rate)))
 
     for step in range(1, steps + 1):
@@ -287,99 +340,153 @@ def _transition_robot_to_entry_pose(
     robot: rc.Robot,
     target_pose: rc.Robot,
     sample_rate: float,
+    motion_segments: list[rc.MotionSegment] | None = None,
 ) -> list[dict]:
     poses: list[dict] = []
+    if abs(robot.arm_angle) > 1e-9:
+        poses.extend(rc._generateArmTurnPoses(
+            robot,
+            robot.car_position,
+            robot.heading,
+            robot.arm_angle,
+            0.0,
+            robot.arm_angular_velocity_limit,
+            sample_rate,
+            motion_segments,
+            "arm_retract",
+        ))
     if math.dist(robot.car_position, target_pose.car_position) > 1e-9:
         heading_to_target = rc.computeHeading(robot.car_position, target_pose.car_position)
-        _append_turn_poses(poses, robot, heading_to_target, sample_rate)
-        _append_move_poses(poses, robot, target_pose.car_position, sample_rate)
-    _append_turn_poses(poses, robot, target_pose.heading, sample_rate)
-    robot.arm_angle = target_pose.arm_angle
+        _append_turn_poses(poses, robot, heading_to_target, sample_rate, motion_segments)
+        _append_move_poses(poses, robot, target_pose.car_position, sample_rate, motion_segments)
+    _append_turn_poses(poses, robot, target_pose.heading, sample_rate, motion_segments)
+    robot.arm_angle = 0.0
     robot.arm_angular_velocity = 0.0
     robot.car_speed = 0.0
     robot.car_angular_velocity = 0.0
     return poses
 
 
-def segment_map_into_rectangles(config: PipelineConfig) -> tuple[np.ndarray, list[bg.Rect]]:
+def segment_map_into_rectangles(
+    config: PipelineConfig,
+) -> tuple[np.ndarray, np.ndarray, list[bg.Rect], dict]:
     map_path = _map_output_path(config.map_path)
     if not map_path.exists():
         raise FileNotFoundError(f"未找到地图文件：{map_path}")
 
     raw_map = seg.loadMap(str(map_path))
     grid_map = seg.resterizeMap(raw_map, config.grid_size)
-    # Phase 1: row-based candidates → greedy selection
-    candidates_row = seg.generateCandidates(
-        grid_map,
-        config.min_edge_length,
-        config.pixel_size,
-        config.grid_size,
-        config.candidate_top_k,
+    candidate_selection = seg_methods.select_candidates(
+        strategy=config.candidate_scan_strategy,
+        grid_map=grid_map,
+        raw_map=raw_map,
+        min_edge_length=config.min_edge_length,
+        pixel_size=config.pixel_size,
+        grid_size=config.grid_size,
+        candidate_top_k=config.candidate_top_k,
+        alpha=config.alpha,
+        beta=config.beta,
     )
-    selected_row = seg.greedySelection(
-        candidates_row,
-        raw_map,
-        config.pixel_size,
-        config.alpha,
-        config.beta,
-    )
-
-    # Phase 2: col-based candidates on remaining free space
-    # Treat row-selected areas as obstacles so col rects fill the gaps
-    masked_grid = seg.maskRects(grid_map, selected_row, config.pixel_size, config.grid_size)
-    candidates_col = seg.generateColCandidates(
-        masked_grid,
-        config.min_edge_length,
-        config.pixel_size,
-        config.grid_size,
-        config.candidate_top_k,
-    )
-    # Pre-fill cover_count so col greedy gain is relative to what row already covered
-    init_cover = seg.buildCoverCount(selected_row, raw_map.shape, config.pixel_size)
-    selected_col = seg.greedySelection(
-        candidates_col,
-        raw_map,
-        config.pixel_size,
-        config.alpha,
-        config.beta,
-        initial_cover_count=init_cover,
-    )
-
-    selected_rects = selected_row + selected_col
+    selected_rects = candidate_selection.selected_rectangles
     if not selected_rects:
         raise ValueError("未分割出任何可覆盖矩形，请检查 map.png 或调整分割参数。")
-    print(f"[segmentation] row={len(selected_row)} rects, col={len(selected_col)} rects, total={len(selected_rects)}")
+    greedy_partition = _rectangle_partition_metrics(
+        selected_rects,
+        raw_map,
+        config.pixel_size,
+    )
 
     # Random expansion session: fill uncovered free-space gaps
     selected_rects = seg.randomExpansionSession(
-        grid_map, selected_rects, config.pixel_size, config.grid_size, config.min_edge_length
-    )
-    print(f"[random expansion] total={len(selected_rects)} rects after expansion")
-
-    # Connectivity repair: bridge pool must use UNMASKED col candidates so it can span
-    # across row-selected regions and bridge disconnected components
-    candidates_col_unmasked = seg.generateColCandidates(
         grid_map,
-        config.min_edge_length,
+        selected_rects,
         config.pixel_size,
         config.grid_size,
-        config.candidate_top_k,
+        config.min_edge_length,
+        seed=config.random_seed,
     )
-    all_candidates_bg = [_to_bg_rect(r) for r in candidates_row + candidates_col_unmasked]
+    expanded_total = len(selected_rects)
+    expanded_partition = _rectangle_partition_metrics(
+        selected_rects,
+        raw_map,
+        config.pixel_size,
+    )
+
+    all_candidates_bg = [_to_bg_rect(r) for r in candidate_selection.connectivity_candidates]
     selected_bg = [_to_bg_rect(r) for r in selected_rects]
-    repaired_bg = bg.repairConnectivity(selected_bg, all_candidates_bg, config.min_edge_length)
-    if len(repaired_bg) > len(selected_bg):
-        print(f"[connectivity] inserted {len(repaired_bg) - len(selected_bg)} bridge rect(s)")
+    start_rect_before_connectivity = _choose_start_rect(
+        selected_bg,
+        config.start_rect,
+    )
+    connectivity_result = conn_methods.apply_connectivity_strategy(
+        strategy=config.connectivity_strategy,
+        selected_rectangles=selected_bg,
+        connectivity_candidates=all_candidates_bg,
+        min_edge_length=config.min_edge_length,
+        grid_map=grid_map,
+        pixel_size=config.pixel_size,
+        grid_size=config.grid_size,
+    )
+    repaired_bg = connectivity_result.rectangles
 
-    preview = seg.drawSegmentation(raw_map.copy(), selected_rects, config.pixel_size)
+    repaired_seg = [seg.Rect(r.x1, r.y1, r.x2, r.y2) for r in repaired_bg]
+    preview = seg.drawSegmentation(raw_map.copy(), repaired_seg, config.pixel_size)
     seg.saveMap(preview, str(_map_output_path(config.segmentation_preview_path)))
-    return raw_map, repaired_bg
+    stats = {
+        **candidate_selection.stats,
+        "expanded_rectangle_count": expanded_total,
+        "start_rectangle_before_connectivity": start_rect_before_connectivity,
+        "start_rectangle_coordinates_before_connectivity": {
+            "x1": selected_bg[start_rect_before_connectivity].x1,
+            "y1": selected_bg[start_rect_before_connectivity].y1,
+            "x2": selected_bg[start_rect_before_connectivity].x2,
+            "y2": selected_bg[start_rect_before_connectivity].y2,
+        },
+        **connectivity_result.stats,
+        "final_rectangle_count": len(repaired_bg),
+        "greedy_partition": greedy_partition,
+        "expanded_partition": expanded_partition,
+        "final_partition": _rectangle_partition_metrics(
+            repaired_bg,
+            raw_map,
+            config.pixel_size,
+        ),
+    }
+    return raw_map, preview, repaired_bg, stats
 
 
-def build_traversal_order(rect_list: list[bg.Rect], config: PipelineConfig) -> tuple[list[list[int]], list[int], int]:
+def build_traversal_order(
+    rect_list: list[bg.Rect],
+    config: PipelineConfig,
+    fixed_start_rect: int | None = None,
+) -> tuple[list[list[int]], list[int], int]:
     adjacency_graph = bg.getAdjacencyGraph(rect_list, config.min_edge_length)
-    start_rect = _choose_start_rect(rect_list, config.start_rect)
-    order = bg.findMinTimeTraversalOrder(rect_list, adjacency_graph, start_rect)
+    start_rect = (
+        _choose_start_rect(rect_list, fixed_start_rect)
+        if fixed_start_rect is not None
+        else _choose_start_rect(rect_list, config.start_rect)
+    )
+    if config.traversal_order is None:
+        order = bg.findMinTimeTraversalOrder(
+            rect_list,
+            adjacency_graph,
+            start_rect,
+            config.robot,
+        )
+    else:
+        order = list(config.traversal_order)
+        if not order or order[0] != start_rect:
+            raise ValueError("固定 traversal.order 必须从选定的起始矩形开始。")
+        if any(index < 0 or index >= len(rect_list) for index in order):
+            raise ValueError("固定 traversal.order 包含越界矩形编号。")
+        if any(
+            not adjacency_graph[current][following]
+            for current, following in zip(order, order[1:])
+        ):
+            raise ValueError("固定 traversal.order 包含不相邻的矩形转移。")
+        reachable = set(bg.findReachableFromStart(start_rect, adjacency_graph))
+        if set(order) != reachable:
+            raise ValueError("固定 traversal.order 必须覆盖起点可达的全部矩形。")
     if not order:
         raise ValueError("未能从建图模块得到有效的矩形遍历顺序。")
     return adjacency_graph, order, start_rect
@@ -390,6 +497,7 @@ def generate_pipeline_poses(
     order: list[int],
     robot: rc.Robot,
     sample_rate: float,
+    motion_segments: list[rc.MotionSegment] | None = None,
 ) -> tuple[list[dict], rc.Robot]:
     if not rect_list or not order:
         return [], robot
@@ -410,7 +518,12 @@ def generate_pipeline_poses(
             working_robot = _copy_robot(entry_robot)
             _append_stationary_pose(all_poses, working_robot)
         else:
-            all_poses.extend(_transition_robot_to_entry_pose(working_robot, entry_robot, sample_rate))
+            all_poses.extend(_transition_robot_to_entry_pose(
+                working_robot,
+                entry_robot,
+                sample_rate,
+                motion_segments,
+            ))
             working_robot.heading = entry_robot.heading
             working_robot.arm_angle = entry_robot.arm_angle
             working_robot.car_position = entry_robot.car_position
@@ -426,13 +539,19 @@ def generate_pipeline_poses(
                     out_point,
                     working_robot,
                     sample_rate=sample_rate,
+                    motion_segments=motion_segments,
                 )
             )
             visited_rects.add(rect_idx)
             continue
 
         exit_robot = rc.findRobotPoseByInPoint(rect_rc, out_point, _copy_robot(working_robot))
-        all_poses.extend(_transition_robot_to_entry_pose(working_robot, exit_robot, sample_rate))
+        all_poses.extend(_transition_robot_to_entry_pose(
+            working_robot,
+            exit_robot,
+            sample_rate,
+            motion_segments,
+        ))
         working_robot.heading = exit_robot.heading
         working_robot.arm_angle = exit_robot.arm_angle
         working_robot.car_position = exit_robot.car_position
@@ -442,38 +561,197 @@ def generate_pipeline_poses(
     return all_poses, working_robot
 
 
-def _render_frames(
-    raw_map: np.ndarray,
-    rect_list: list[bg.Rect],
-    poses: list[dict],
+def _motion_disc_center(
+    segment: rc.MotionSegment,
+    ratio: float,
+    robot: rc.Robot,
+) -> tuple[float, float]:
+    """Evaluate the exact parametric disc-center curve for one motion segment."""
+    car_x = segment.car_position_start[0] + (
+        segment.car_position_end[0] - segment.car_position_start[0]
+    ) * ratio
+    car_y = segment.car_position_start[1] + (
+        segment.car_position_end[1] - segment.car_position_start[1]
+    ) * ratio
+    heading = segment.heading_start + (
+        segment.heading_end - segment.heading_start
+    ) * ratio
+    if segment.arm_motion == "oscillating":
+        arm_angle, _ = rc._oscillatingArmAngle(
+            ratio * segment.duration,
+            segment.arm_angle_start,
+            segment.arm_angular_velocity,
+            segment.arm_angle_lower,
+            segment.arm_angle_upper,
+        )
+    else:
+        arm_angle = segment.arm_angle_start + (
+            segment.arm_angle_end - segment.arm_angle_start
+        ) * ratio
+    heading_rad = math.radians(heading)
+    pivot_x = car_x - robot.pivot_to_car_center * math.cos(heading_rad)
+    pivot_y = car_y - robot.pivot_to_car_center * math.sin(heading_rad)
+    arm_heading = math.radians(heading + 180.0 + arm_angle)
+    return (
+        pivot_x + robot.arm_length * math.cos(arm_heading),
+        pivot_y + robot.arm_length * math.sin(arm_heading),
+    )
+
+
+def _point_segment_distance(
+    point: tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
+) -> float:
+    dx, dy = end[0] - start[0], end[1] - start[1]
+    denominator = dx * dx + dy * dy
+    if denominator <= 1e-18:
+        return math.dist(point, start)
+    ratio = (
+        (point[0] - start[0]) * dx + (point[1] - start[1]) * dy
+    ) / denominator
+    ratio = max(0.0, min(1.0, ratio))
+    projection = (start[0] + ratio * dx, start[1] + ratio * dy)
+    return math.dist(point, projection)
+
+
+def _flatten_disc_center_curve(
+    segment: rc.MotionSegment,
+    robot: rc.Robot,
+    tolerance: float,
+) -> list[tuple[float, float]]:
+    """Approximate C(t) geometrically; the tolerance is independent of pose Hz."""
+    start = _motion_disc_center(segment, 0.0, robot)
+    end = _motion_disc_center(segment, 1.0, robot)
+    points = [start]
+    max_angle_step = 5.0
+
+    def subdivide(
+        ratio_start: float,
+        point_start: tuple[float, float],
+        ratio_end: float,
+        point_end: tuple[float, float],
+        depth: int,
+    ) -> None:
+        ratio_mid = (ratio_start + ratio_end) / 2.0
+        point_mid = _motion_disc_center(segment, ratio_mid, robot)
+        chord_error = _point_segment_distance(point_mid, point_start, point_end)
+        fraction = ratio_end - ratio_start
+        heading_change = abs(segment.heading_end - segment.heading_start) * fraction
+        if segment.arm_motion == "oscillating":
+            disc_arm_change = (
+                abs(segment.heading_end - segment.heading_start) * fraction
+                + abs(segment.arm_angular_velocity) * segment.duration * fraction
+            )
+        else:
+            disc_arm_change = abs(
+                (segment.heading_end + segment.arm_angle_end)
+                - (segment.heading_start + segment.arm_angle_start)
+            ) * fraction
+        if (
+            depth < 20
+            and (
+                chord_error > tolerance
+                or heading_change > max_angle_step
+                or disc_arm_change > max_angle_step
+            )
+        ):
+            subdivide(
+                ratio_start,
+                point_start,
+                ratio_mid,
+                point_mid,
+                depth + 1,
+            )
+            subdivide(
+                ratio_mid,
+                point_mid,
+                ratio_end,
+                point_end,
+                depth + 1,
+            )
+            return
+        points.append(point_end)
+
+    subdivide(0.0, start, 1.0, end, 0)
+    return points
+
+
+def _rasterize_capsule(
+    mask: np.ndarray,
+    start: tuple[float, float],
+    end: tuple[float, float],
+    radius: float,
+    pixel_size: float,
+) -> None:
+    """Rasterize {x: distance(x, segment) <= radius} using pixel centers."""
+    height, width = mask.shape
+    min_x, max_x = min(start[0], end[0]) - radius, max(start[0], end[0]) + radius
+    min_y, max_y = min(start[1], end[1]) - radius, max(start[1], end[1]) + radius
+    col1 = max(0, int(math.floor(min_x / pixel_size)) - 1)
+    col2 = min(width, int(math.ceil(max_x / pixel_size)) + 1)
+    row1 = max(0, int(math.floor(min_y / pixel_size)) - 1)
+    row2 = min(height, int(math.ceil(max_y / pixel_size)) + 1)
+    if row1 >= row2 or col1 >= col2:
+        return
+
+    rows, cols = np.mgrid[row1:row2, col1:col2]
+    xs = (cols + 0.5) * pixel_size
+    ys = (rows + 0.5) * pixel_size
+    dx, dy = end[0] - start[0], end[1] - start[1]
+    denominator = dx * dx + dy * dy
+    if denominator <= 1e-18:
+        distance_squared = (xs - start[0]) ** 2 + (ys - start[1]) ** 2
+    else:
+        ratios = np.clip(
+            ((xs - start[0]) * dx + (ys - start[1]) * dy) / denominator,
+            0.0,
+            1.0,
+        )
+        nearest_x = start[0] + ratios * dx
+        nearest_y = start[1] + ratios * dy
+        distance_squared = (xs - nearest_x) ** 2 + (ys - nearest_y) ** 2
+    mask[row1:row2, col1:col2] |= distance_squared <= radius ** 2 + 1e-12
+
+
+def build_parametric_coverage_masks(
+    motion_segments: list[rc.MotionSegment],
+    map_shape: tuple[int, int],
     robot: rc.Robot,
     pixel_size: float,
-) -> list[np.ndarray]:
-    if not poses:
-        return []
-
-    base_map = raw_map.copy()
-    for rect in rect_list:
-        rc._drawRect(base_map, _to_rc_rect(rect), pixel_size, color=216)
-
-    frames: list[np.ndarray] = []
-    trail_map = base_map.copy()
-    prev_position: tuple[float, float] | None = None
-    for pose in poses:
-        if prev_position is not None:
-            rc._drawLine(trail_map, prev_position, pose["car_position"], pixel_size, color=96)
-        prev_position = pose["car_position"]
-
-        frame = trail_map.copy()
-        robot.heading = pose["heading"]
-        robot.arm_angle = pose["arm_angle"]
-        robot.car_speed = pose["car_speed"]
-        robot.car_angular_velocity = pose["car_angular_velocity"]
-        robot.car_position = pose["car_position"]
-        rc._drawRobot(frame, robot, pixel_size)
-        frames.append(frame)
-
-    return frames
+    geometry_tolerance: float | None = None,
+) -> tuple[np.ndarray, np.ndarray, float]:
+    """Return work and full-trajectory masks from parametric swept discs."""
+    tolerance = geometry_tolerance or min(
+        pixel_size / 8.0,
+        robot.disc_radius / 20.0,
+    )
+    if tolerance <= 0:
+        raise ValueError("geometry_tolerance 必须为正数。")
+    work_mask = np.zeros(map_shape, dtype=bool)
+    trajectory_mask = np.zeros(map_shape, dtype=bool)
+    for segment in motion_segments:
+        centers = _flatten_disc_center_curve(segment, robot, tolerance)
+        pairs = list(zip(centers, centers[1:]))
+        if not pairs:
+            pairs = [(centers[0], centers[0])]
+        for start, end in pairs:
+            _rasterize_capsule(
+                trajectory_mask,
+                start,
+                end,
+                robot.disc_radius,
+                pixel_size,
+            )
+            if segment.coverage_active:
+                _rasterize_capsule(
+                    work_mask,
+                    start,
+                    end,
+                    robot.disc_radius,
+                    pixel_size,
+                )
+    return work_mask, trajectory_mask, tolerance
 
 
 def compute_coverage_metrics(
@@ -481,108 +759,369 @@ def compute_coverage_metrics(
     raw_map: np.ndarray,
     robot: rc.Robot,
     pixel_size: float,
+    motion_segments: list[rc.MotionSegment] | None = None,
+    rect_list: list[bg.Rect] | None = None,
+    order: list[int] | None = None,
 ) -> dict:
-    """Compute disc-swept coverage ratio over the free-space map.
-
-    For each pose, reconstructs the disc center using the same geometry as
-    _drawRobot, then rasterises the disc footprint onto a boolean coverage map.
-    Returns total free pixels, covered free pixels, coverage ratio, and the map.
-    """
-    free_mask = raw_map == 255  # white pixels = free space
+    """Compute physical swept-disc metrics independently of pose sample rate."""
+    free_mask = raw_map == 255
     total_free_px = int(np.sum(free_mask))
-    if not poses or total_free_px == 0:
-        return {
-            "total_free_px": total_free_px,
-            "covered_free_px": 0,
-            "coverage_ratio": 0.0,
-            "covered_map": np.zeros_like(raw_map, dtype=bool),
-        }
-
-    covered = np.zeros_like(raw_map, dtype=bool)
-    H, W = raw_map.shape
-    disc_radius_px = max(1, int(robot.disc_radius / pixel_size))
-
-    for pose in poses:
-        heading_rad = math.radians(pose["heading"])
-        cx, cy = pose["car_position"]
-        pivot_x = cx - robot.pivot_to_car_center * math.cos(heading_rad)
-        pivot_y = cy - robot.pivot_to_car_center * math.sin(heading_rad)
-        arm_heading_rad = math.radians(pose["heading"] + 180 + pose["arm_angle"])
-        disc_x = pivot_x + robot.arm_length * math.cos(arm_heading_rad)
-        disc_y = pivot_y + robot.arm_length * math.sin(arm_heading_rad)
-
-        cx_px, cy_px = rc.coordinateWorldToMap((disc_x, disc_y), pixel_size)
-        r = disc_radius_px
-        y0 = max(0, cy_px - r)
-        y1 = min(H, cy_px + r + 1)
-        x0 = max(0, cx_px - r)
-        x1 = min(W, cx_px + r + 1)
-        if y0 >= y1 or x0 >= x1:
-            continue
-
-        ys, xs = np.mgrid[y0:y1, x0:x1]
-        disc_mask = (xs - cx_px) ** 2 + (ys - cy_px) ** 2 <= r ** 2
-        covered[y0:y1, x0:x1] |= disc_mask
-
-    covered_free_px = int(np.sum(covered & free_mask))
+    if motion_segments is not None:
+        work_covered, trajectory_covered, tolerance = build_parametric_coverage_masks(
+            motion_segments,
+            raw_map.shape,
+            robot,
+            pixel_size,
+        )
+        source = "parametric_swept_disc"
+    else:
+        work_covered = build_coverage_mask(poses, raw_map.shape, robot, pixel_size)
+        trajectory_covered = work_covered.copy()
+        tolerance = None
+        source = "sampled_disc_poses"
+    work_covered_free_px = int(np.sum(work_covered & free_mask))
+    trajectory_covered_free_px = int(np.sum(trajectory_covered & free_mask))
     return {
         "total_free_px": total_free_px,
-        "covered_free_px": covered_free_px,
-        "coverage_ratio": covered_free_px / total_free_px,
-        "covered_map": covered,
+        "covered_free_px": work_covered_free_px,
+        "uncovered_free_px": total_free_px - work_covered_free_px,
+        "coverage_ratio": work_covered_free_px / total_free_px if total_free_px else 0.0,
+        "work_covered_free_px": work_covered_free_px,
+        "work_uncovered_free_px": total_free_px - work_covered_free_px,
+        "work_coverage_ratio": work_covered_free_px / total_free_px if total_free_px else 0.0,
+        "trajectory_covered_free_px": trajectory_covered_free_px,
+        "trajectory_uncovered_free_px": total_free_px - trajectory_covered_free_px,
+        "trajectory_coverage_ratio": (
+            trajectory_covered_free_px / total_free_px if total_free_px else 0.0
+        ),
+        "coverage_source": source,
+        "geometry_tolerance_m": tolerance,
+        "covered_map": work_covered,
+        "work_covered_map": work_covered,
+        "trajectory_covered_map": trajectory_covered,
     }
 
 
-def _save_video(frames: list[np.ndarray], output_path: Path, sample_rate: float) -> None:
-    if not frames:
-        raise ValueError("没有可写入视频的帧。")
+def _sha256(path: str | Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
+
+def _repository_path(path: str | Path) -> str:
+    resolved = Path(path).resolve()
     try:
-        import imageio.v2 as imageio
-    except ImportError as exc:
-        raise ImportError("导出视频需要安装 imageio。") from exc
+        return str(resolved.relative_to(REPOSITORY_ROOT))
+    except ValueError:
+        return str(resolved)
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    rgb_frames = [np.repeat(frame[:, :, None], 3, axis=2) for frame in frames]
-    suffix = output_path.suffix.lower()
 
-    if suffix == ".gif":
-        imageio.mimsave(output_path, rgb_frames, duration=1.0 / sample_rate)
-        return
+def _write_json(payload: dict, path: str | Path) -> None:
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix(output.suffix + ".tmp")
+    with temporary.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+    temporary.replace(output)
 
+
+def _artifact(path: str | Path) -> dict:
+    target = Path(path)
+    return {
+        "path": _repository_path(target),
+        "bytes": target.stat().st_size,
+        "sha256": _sha256(target),
+    }
+
+
+def _motion_duration_metrics(
+    motion_segments: list[rc.MotionSegment],
+) -> dict:
+    """Summarize exact continuous durations rather than sampled pose counts."""
+    phase_durations: dict[str, float] = {}
+    work_duration = 0.0
+    for segment in motion_segments:
+        phase_durations[segment.phase] = (
+            phase_durations.get(segment.phase, 0.0) + segment.duration
+        )
+        if segment.coverage_active:
+            work_duration += segment.duration
+    total_duration = sum(segment.duration for segment in motion_segments)
+    work_distances = [
+        math.dist(segment.car_position_start, segment.car_position_end)
+        for segment in motion_segments
+        if segment.coverage_active
+    ]
+    work_speeds = [
+        distance / segment.duration
+        for segment, distance in zip(
+            (segment for segment in motion_segments if segment.coverage_active),
+            work_distances,
+        )
+        if segment.duration > 0 and distance > 0
+    ]
+    work_distance = sum(work_distances)
+    return {
+        "duration_source": "continuous_motion_segments",
+        "duration_seconds": total_duration,
+        "work_duration_seconds": work_duration,
+        "non_work_duration_seconds": total_duration - work_duration,
+        "phase_duration_seconds": phase_durations,
+        "work_distance_m": work_distance,
+        "actual_average_work_speed_mps": (
+            work_distance / work_duration if work_duration > 0 else 0.0
+        ),
+        "actual_max_work_speed_mps": max(work_speeds, default=0.0),
+    }
+
+
+def _traversal_reachability_metrics(
+    rect_list: list[bg.Rect],
+    adjacency_graph: list[list[int]],
+    start_rect: int,
+    raw_map: np.ndarray,
+    pixel_size: float,
+) -> dict:
+    """Measure how much of the partition can be visited from one fixed start."""
+    reachable_rectangles = bg.findReachableFromStart(start_rect, adjacency_graph)
+    reachable_set = set(reachable_rectangles)
+    unreachable_rectangles = [
+        index for index in range(len(rect_list)) if index not in reachable_set
+    ]
+    return {
+        "total_rectangle_count": len(rect_list),
+        "reachable_rectangles": reachable_rectangles,
+        "unreachable_rectangles": unreachable_rectangles,
+        "reachable_rectangle_count": len(reachable_rectangles),
+        "unreachable_rectangle_count": len(unreachable_rectangles),
+        "reachable_rectangle_ratio": (
+            len(reachable_rectangles) / len(rect_list) if rect_list else 0.0
+        ),
+        "all_rectangles_reachable": not unreachable_rectangles,
+        "reachable_partition": _rectangle_partition_metrics(
+            [rect_list[index] for index in reachable_rectangles],
+            raw_map,
+            pixel_size,
+        ),
+    }
+
+
+def run_experiment(config: PipelineConfig) -> dict:
+    """Run one configured experiment and persist all research artifacts."""
+    started_at = datetime.now(timezone.utc)
+    total_start = time.perf_counter()
+    random.seed(config.random_seed)
+    np.random.seed(config.random_seed)
+    robot = create_robot(config.robot, config.work_speed_policy)
+
+    _write_json(config.snapshot(), config.config_snapshot_path)
+
+    stage_start = time.perf_counter()
+    raw_map, segmentation_map, rect_list, segmentation_stats = segment_map_into_rectangles(config)
+    segmentation_seconds = time.perf_counter() - stage_start
+
+    stage_start = time.perf_counter()
+    adjacency_graph, order, start_rect = build_traversal_order(
+        rect_list,
+        config,
+        fixed_start_rect=segmentation_stats["start_rectangle_before_connectivity"],
+    )
+    traversal_seconds = time.perf_counter() - stage_start
+    reachability_metrics = _traversal_reachability_metrics(
+        rect_list,
+        adjacency_graph,
+        start_rect,
+        raw_map,
+        config.pixel_size,
+    )
+    save_traversal_order(
+        segmentation_map,
+        rect_list,
+        order,
+        config.pixel_size,
+        config.traversal_preview_path,
+    )
+
+    stage_start = time.perf_counter()
+    motion_segments: list[rc.MotionSegment] = []
+    poses, _ = generate_pipeline_poses(
+        rect_list,
+        order,
+        robot,
+        config.sample_rate,
+        motion_segments=motion_segments,
+    )
+    pose_generation_seconds = time.perf_counter() - stage_start
+
+    metrics = compute_coverage_metrics(
+        poses,
+        raw_map,
+        robot,
+        config.pixel_size,
+        motion_segments=motion_segments,
+        rect_list=rect_list,
+        order=order,
+    )
+    duration_metrics = _motion_duration_metrics(motion_segments)
+    covered_area_m2 = (
+        metrics["work_covered_free_px"] * config.pixel_size ** 2
+    )
+    duration_seconds = duration_metrics["duration_seconds"]
+    coverage_image = render_coverage_image(
+        segmentation_map,
+        raw_map,
+        metrics["covered_map"],
+        config.coverage_color,
+    )
+    save_coverage_png(coverage_image, config.coverage_image_path)
+
+    stage_start = time.perf_counter()
+    save_coverage_video(
+        raw_map=raw_map,
+        segmentation_map=segmentation_map,
+        poses=poses,
+        robot=_copy_robot(robot),
+        pixel_size=config.pixel_size,
+        sample_rate=config.sample_rate,
+        output_path=config.output_video_path,
+        coverage_color=config.coverage_color,
+        trail_color=config.trail_color,
+        robot_color=config.robot_color,
+    )
+    rendering_seconds = time.perf_counter() - stage_start
+
+    finished_at = datetime.now(timezone.utc)
+    report = {
+        "schema_version": "1.0",
+        "status": "completed",
+        "experiment": {
+            "name": config.experiment_name,
+            "started_at": started_at.isoformat(),
+            "finished_at": finished_at.isoformat(),
+            "config": _repository_path(config.config_path),
+            "robot_config": _repository_path(config.robot_config_path),
+            "random_seed": config.random_seed,
+        },
+        "input": {
+            "map": _repository_path(config.map_path),
+            "map_sha256": _sha256(config.map_path),
+            "map_shape_px": {"height": int(raw_map.shape[0]), "width": int(raw_map.shape[1])},
+            "pixel_size_m": config.pixel_size,
+        },
+        "segmentation": segmentation_stats,
+        "traversal": {
+            "start_rectangle": start_rect,
+            "start_rectangle_coordinates": {
+                "x1": rect_list[start_rect].x1,
+                "y1": rect_list[start_rect].y1,
+                "x2": rect_list[start_rect].x2,
+                "y2": rect_list[start_rect].y2,
+            },
+            "order": order,
+            "transition_count": max(0, len(order) - 1),
+            "unique_rectangle_count": len(set(order)),
+            "revisit_count": len(order) - len(set(order)),
+            "adjacency_edge_count": sum(sum(row) for row in adjacency_graph) // 2,
+            **reachability_metrics,
+        },
+        "trajectory": {
+            "pose_count": len(poses),
+            "sample_rate_hz": config.sample_rate,
+            "sampled_pose_duration_seconds": max(0, len(poses) - 1) / config.sample_rate,
+            **duration_metrics,
+            "configured_speed_limit_mps": config.robot.speed_limit,
+            "work_speed_policy": config.work_speed_policy,
+            "arm_angular_velocity_limit_deg_s": config.robot.arm_angular_velocity_limit,
+            "work_speed_limited": (
+                duration_metrics["actual_max_work_speed_mps"]
+                < config.robot.speed_limit - 1e-9
+            ),
+        },
+        "coverage": {
+            "source": metrics["coverage_source"],
+            "partition_coverage_ratio": segmentation_stats["final_partition"]["free_coverage_ratio"],
+            "total_free_px": metrics["total_free_px"],
+            "covered_free_px": metrics["covered_free_px"],
+            "uncovered_free_px": metrics["uncovered_free_px"],
+            "coverage_ratio": metrics["coverage_ratio"],
+            "covered_free_area_m2": covered_area_m2,
+            "execution_seconds_per_covered_m2": (
+                duration_seconds / covered_area_m2
+                if covered_area_m2 > 0
+                else None
+            ),
+            "covered_m2_per_execution_second": (
+                covered_area_m2 / duration_seconds
+                if duration_seconds > 0
+                else None
+            ),
+            "work_disc": {
+                "covered_free_px": metrics["work_covered_free_px"],
+                "uncovered_free_px": metrics["work_uncovered_free_px"],
+                "coverage_ratio": metrics["work_coverage_ratio"],
+            },
+            "full_trajectory_disc": {
+                "covered_free_px": metrics["trajectory_covered_free_px"],
+                "uncovered_free_px": metrics["trajectory_uncovered_free_px"],
+                "coverage_ratio": metrics["trajectory_coverage_ratio"],
+            },
+            "geometry": {
+                "method": metrics["coverage_source"],
+                "disc_radius_m": robot.disc_radius,
+                "arm_length_m": robot.arm_length,
+                "pixel_criterion": "pixel_center",
+                "geometry_tolerance_m": metrics["geometry_tolerance_m"],
+                "sampling_rate_independent": metrics["coverage_source"] == "parametric_swept_disc",
+                "motion_segment_count": len(motion_segments),
+            },
+        },
+        "rectangles": [
+            {"id": idx, "x1": rect.x1, "y1": rect.y1, "x2": rect.x2, "y2": rect.y2}
+            for idx, rect in enumerate(rect_list)
+        ],
+        "runtime_seconds": {
+            "segmentation": segmentation_seconds,
+            "traversal": traversal_seconds,
+            "pose_generation": pose_generation_seconds,
+            "rendering": rendering_seconds,
+            "total": time.perf_counter() - total_start,
+        },
+        "artifacts": {
+            "segmentation_image": _artifact(config.segmentation_preview_path),
+            "traversal_image": _artifact(config.traversal_preview_path),
+            "coverage_video": _artifact(config.output_video_path),
+            "coverage_image": _artifact(config.coverage_image_path),
+            "config_snapshot": _artifact(config.config_snapshot_path),
+            "metrics_json": {"path": _repository_path(config.metrics_path)},
+        },
+    }
+    _write_json(report, config.metrics_path)
+    return report
+
+
+def main(config: PipelineConfig | None = None) -> dict:
+    return run_experiment(config or load_experiment_config())
+
+
+def cli(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Run a reproducible path-coverage experiment.")
+    parser.add_argument(
+        "--config",
+        default=str(DEFAULT_CONFIG_PATH),
+        help="实验 JSON 配置路径",
+    )
+    args = parser.parse_args(argv)
     try:
-        with imageio.get_writer(output_path, fps=sample_rate, macro_block_size=1) as writer:
-            for frame in rgb_frames:
-                writer.append_data(frame)
-    except Exception:
-        fallback_path = output_path.with_suffix(".gif")
-        imageio.mimsave(fallback_path, rgb_frames, duration=1.0 / sample_rate)
-        raise RuntimeError(f"视频写入失败，已回退输出为 GIF：{fallback_path}")
-
-
-def main(config: PipelineConfig | None = None) -> tuple[list[bg.Rect], list[int], list[dict]]:
-    config = config or PipelineConfig()
-    robot = create_default_robot()
-
-    raw_map, rect_list = segment_map_into_rectangles(config)
-    _, order, start_rect = build_traversal_order(rect_list, config)
-    poses, _ = generate_pipeline_poses(rect_list, order, robot, config.sample_rate)
-
-    metrics = compute_coverage_metrics(poses, raw_map, robot, config.pixel_size)
-
-    frames = _render_frames(raw_map, rect_list, poses, _copy_robot(robot), config.pixel_size)
-    _save_video(frames, _map_output_path(config.output_video_path), config.sample_rate)
-
-    print(f"分割得到 {len(rect_list)} 个矩形")
-    print(f"起始矩形索引: {start_rect}")
-    print(f"矩形遍历顺序: {order}")
-    print(f"总位姿数: {len(poses)}")
-    print(f"分割预览图: {_map_output_path(config.segmentation_preview_path)}")
-    print(f"输出视频: {_map_output_path(config.output_video_path)}")
-    print(f"覆盖率: {metrics['coverage_ratio']:.1%}  ({metrics['covered_free_px']}/{metrics['total_free_px']} px)")
-
-    return rect_list, order, poses
+        report = run_experiment(load_experiment_config(args.config))
+    except Exception as exc:
+        print(json.dumps({"status": "failed", "error": str(exc)}, ensure_ascii=False), file=sys.stderr)
+        return 1
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(cli())

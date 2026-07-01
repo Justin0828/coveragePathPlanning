@@ -328,7 +328,12 @@ def generateMap(
 def main() -> None:
     parser = argparse.ArgumentParser(description="将 Fields2Cover JSON 转成 pathCoverage 灰度地图。")
     parser.add_argument("json_path", help="Fields2Cover GeoJSON 输入路径")
-    parser.add_argument("output_path", nargs="?", default="map.png", help="输出 PNG（默认 map.png）")
+    parser.add_argument(
+        "output_path",
+        nargs="?",
+        default="experiments/fields2cover_comparison/maps/fields2cover_map.png",
+        help="输出 PNG（默认写入 fields2cover_comparison/maps）",
+    )
     parser.add_argument("--pixel-size", type=float, default=0.5, help="每像素对应的米数/平面单位（默认 0.5）")
     parser.add_argument("--padding", type=float, default=0.0, help="地块周围的黑色障碍边距（默认 0）")
     parser.add_argument(

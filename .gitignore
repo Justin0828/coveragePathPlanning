@@ -1,4 +1,13 @@
-*.png
-*.mp4
 __pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.venv/
+build/
+dist/
+*.egg-info/
 .DS_Store
+
+# Generated artifacts live inside each comparison experiment.
+experiments/**/results/**
+!experiments/**/results/.gitkeep

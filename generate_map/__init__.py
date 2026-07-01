@@ -1,0 +1,2 @@
+"""Pluggable occupancy-map generators."""
+

@@ -1,0 +1,10 @@
+{
+  "purpose": "Algorithm source integrity checksums",
+  "sha256": {
+    "build_graph.py": "eb4f2cf1eaa497be5b05b1bb6553a92b686477ce0ea6ba852336a94bdd84316e",
+    "connectivity_methods/__init__.py": "e0f243ff67ccbd51363909f637cae23b7951759d0f4d1412e9bf9584805a7620",
+    "connectivity_methods/strategy.py": "9b46b6fb8631d38b567ad453b92dfc9fd361142a0d4f6c327d6d782ace4ab301",
+    "rectangle_coverage.py": "be5f36d8eecba97cd7e6e50686e9c635dc9cddd9887acef8f220c137e1369e98",
+    "segmentation.py": "c7936059e2f88ae28ce37b8d9039c45c28eb4e9d7fbeea7f9cf75e83d29d4e51"
+  }
+}

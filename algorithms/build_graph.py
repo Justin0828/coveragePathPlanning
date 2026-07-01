@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import segmentation as seg
 import rectangle_coverage as rc
-from typing import Tuple
+from typing import List, Protocol, Tuple
 import math
 import random
 from dataclasses import dataclass
-from typing import List, Tuple
 
 @dataclass
 class Rect:
@@ -15,27 +14,16 @@ class Rect:
     x2: float
     y2: float
 
-@dataclass
-class Robot: # 世界坐标系
-    # 静态信息
-    disc_radius: float = 0.25 # 圆盘半径
-    arm_length: float = 1.2 # 机械臂长度
-    car_width: float = 0.8 # 车宽
-    car_half_length: float = 1.0 # 车长的一半
-    pivot_to_car_center: float = 0.3 # 摆臂旋转中心到车中心的距离
+class RobotCostConfig(Protocol):
+    """图排序代价所需的机器人配置子集。"""
 
-    speed_limit: float = 0.0 # 线速度，一秒走几米；
-    angular_velocity_limit: float = 0.0 # 角速度,代表1秒转几度
-    arm_angle_limit: tuple[float, float] = (0, 90) # 摆臂角度限制
-    arm_angular_velocity_limit: float = 0.0 # 摆臂角速度限制
-
-    # 动态信息
-    heading: float = 0.0 # 航向角
-    arm_angle: float = 0.0 # 摆臂角度，角度制，正向为逆时针
-    arm_angular_velocity: float = 0.0 # 摆臂角速度，角度制，正向为逆时针
-    car_speed: float = 0.0 # 车速度，>= 0，用 heading 确定方向
-    car_angular_velocity: float = 0.0 # 车角速度，角度制，正向为逆时针
-    car_position: tuple[float, float] = (0.0, 0.0) # 车中心点位置
+    disc_radius: float
+    arm_length: float
+    car_half_length: float
+    pivot_to_car_center: float
+    speed_limit: float
+    angular_velocity_limit: float
+    arm_angle_limit: tuple[float, float]
 
 def isAdjacent(
     rect1: Rect, 
@@ -79,44 +67,76 @@ def getAdjacencyGraph(
                 adjacency_graph[j][i] = 1
     return adjacency_graph
 
-# Robot kinematic constants (match create_default_robot in main_pipeline.py)
-_SPEED_LIMIT: float = 1.0        # m/s
-_ANGULAR_VELOCITY: float = 30.0  # deg/s — car turning rate
-_HALF_BAND_WIDTH: float = math.sqrt(1.2 ** 2 - (1.0 - 0.3) ** 2)  # arm=1.2, half_len=1.0, pivot=0.3
+def _maxVariableArmLaneWidth(robot: RobotCostConfig) -> float:
+    """Maximum cross-track width covered by one pass with a +/-90 degree arm swing."""
+    lower, upper = robot.arm_angle_limit
+    if lower > upper:
+        raise ValueError("arm_angle_limit 下限不能大于上限。")
+    if lower > 0 or upper < 0:
+        raise ValueError("arm_angle_limit 必须包含 0 度以支持回收姿态。")
+    swing = min(abs(lower), abs(upper), 90.0)
+    return 2.0 * (robot.arm_length * math.sin(math.radians(swing)) + robot.disc_radius)
 
-def computeCoverageCost(rect: Rect) -> float:
-    """Estimate boustrophedon coverage time from robot kinematics."""
+
+def _validateCostConfig(robot: RobotCostConfig) -> None:
+    if robot.disc_radius <= 0:
+        raise ValueError("robot.disc_radius 必须为正数。")
+    if robot.arm_length <= 0:
+        raise ValueError("robot.arm_length 必须为正数。")
+    if robot.speed_limit <= 0:
+        raise ValueError("robot.speed_limit 必须为正数。")
+    if robot.angular_velocity_limit <= 0:
+        raise ValueError("robot.angular_velocity_limit 必须为正数。")
+
+
+def computeCoverageCost(rect: Rect, robot: RobotCostConfig) -> float:
+    """Estimate boustrophedon coverage time from configured robot kinematics."""
+    _validateCostConfig(robot)
+    lane_width = _maxVariableArmLaneWidth(robot)
     width = rect.x2 - rect.x1
     height = rect.y2 - rect.y1
     if width >= height:
-        num_lanes = max(1, math.ceil(height / (2 * _HALF_BAND_WIDTH)))
+        num_lanes = max(1, math.ceil(height / lane_width))
         lane_length = width
     else:
-        num_lanes = max(1, math.ceil(width / (2 * _HALF_BAND_WIDTH)))
+        num_lanes = max(1, math.ceil(width / lane_width))
         lane_length = height
-    travel_time = num_lanes * lane_length / _SPEED_LIMIT
-    turn_time = max(0, num_lanes - 1) * 180.0 / _ANGULAR_VELOCITY
+    travel_time = num_lanes * lane_length / robot.speed_limit
+    turn_time = max(0, num_lanes - 1) * 180.0 / robot.angular_velocity_limit
     return travel_time + turn_time
 
-def computeTransitionCost(rect_a: Rect, rect_b: Rect) -> float:
-    """Estimate travel time from center of rect_a to center of rect_b."""
+
+def computeTransitionCost(
+    rect_a: Rect,
+    rect_b: Rect,
+    robot: RobotCostConfig,
+) -> float:
+    """Estimate center-to-center transition time from configured kinematics."""
+    _validateCostConfig(robot)
     ca = ((rect_a.x1 + rect_a.x2) / 2, (rect_a.y1 + rect_a.y2) / 2)
     cb = ((rect_b.x1 + rect_b.x2) / 2, (rect_b.y1 + rect_b.y2) / 2)
     dist = math.sqrt((ca[0] - cb[0]) ** 2 + (ca[1] - cb[1]) ** 2)
-    return dist / _SPEED_LIMIT + 180.0 / _ANGULAR_VELOCITY  # travel + one re-orientation turn
+    return (
+        dist / robot.speed_limit
+        + 180.0 / robot.angular_velocity_limit
+    )  # travel + one re-orientation turn
 
 
-def _traversal_order_cost(rect_list: List[Rect], order: List[int]) -> float:
+def _traversal_order_cost(
+    rect_list: List[Rect],
+    order: List[int],
+    robot: RobotCostConfig,
+) -> float:
     """与旧版 DP 一致的总代价：首矩形覆盖 + 每条边转移 + 新矩形覆盖。"""
     if not order:
         return 0.0
     visited = {order[0]}
-    total = computeCoverageCost(rect_list[order[0]])
+    total = computeCoverageCost(rect_list[order[0]], robot)
     for i in range(len(order) - 1):
         next_rect = order[i + 1]
-        total += computeTransitionCost(rect_list[order[i]], rect_list[next_rect])
+        total += computeTransitionCost(rect_list[order[i]], rect_list[next_rect], robot)
         if next_rect not in visited:
-            total += computeCoverageCost(rect_list[next_rect])
+            total += computeCoverageCost(rect_list[next_rect], robot)
             visited.add(next_rect)
     return total
 
@@ -126,6 +146,7 @@ def _minimum_spanning_tree_walk(
     adjacency_graph: List[List[int]],
     start_rect: int,
     reachable_rects: List[int],
+    robot: RobotCostConfig,
 ) -> List[int]:
     """构造一个允许回访节点、且一定覆盖整个连通分量的开放式游走。
 
@@ -151,7 +172,10 @@ def _minimum_spanning_tree_walk(
         for neighbor, is_adjacent in enumerate(adjacency_graph[node]):
             if not is_adjacent or neighbor not in reachable_set or neighbor in in_tree:
                 continue
-            edge = (computeTransitionCost(rect_list[node], rect_list[neighbor]), node)
+            edge = (
+                computeTransitionCost(rect_list[node], rect_list[neighbor], robot),
+                node,
+            )
             if neighbor not in best_connection or edge < best_connection[neighbor]:
                 best_connection[neighbor] = edge
 
@@ -185,7 +209,7 @@ def _minimum_spanning_tree_walk(
             if parent.get(node) == neighbor:
                 continue
             distances[neighbor] = distances[node] + computeTransitionCost(
-                rect_list[node], rect_list[neighbor]
+                rect_list[node], rect_list[neighbor], robot
             )
             stack.append(neighbor)
     end_rect = max(distances, key=lambda node: (distances[node], -node))
@@ -249,6 +273,9 @@ def repairConnectivity(
     selected: List[Rect],
     all_candidates: List[Rect],
     min_edge_length: float,
+    grid_map=None,
+    pixel_size: float | None = None,
+    grid_size: int | None = None,
 ) -> List[Rect]:
     """Post-selection connectivity repair.
 
@@ -257,10 +284,27 @@ def repairConnectivity(
     that connects two different components, until the graph is fully connected
     or no bridge can be found.
     """
+    if grid_map is not None and (pixel_size is None or grid_size is None):
+        raise ValueError("检查桥接矩形障碍物时必须同时提供 pixel_size 和 grid_size。")
+
+    def is_valid(rect: Rect) -> bool:
+        if grid_map is None:
+            return True
+        return seg.isRectObstacleFree(
+            seg.Rect(rect.x1, rect.y1, rect.x2, rect.y2),
+            grid_map,
+            pixel_size,
+            grid_size,
+        )
+
+    invalid_selected = [rect for rect in selected if not is_valid(rect)]
+    if invalid_selected:
+        raise ValueError("已选矩形与障碍物相交，拒绝执行连通性修复。")
+
     result = list(selected)
     selected_keys = set((r.x1, r.y1, r.x2, r.y2) for r in result)
     bridge_pool = [r for r in all_candidates
-                   if (r.x1, r.y1, r.x2, r.y2) not in selected_keys]
+                   if (r.x1, r.y1, r.x2, r.y2) not in selected_keys and is_valid(r)]
 
     while True:
         components = _getConnectedComponents(result, min_edge_length)
@@ -378,6 +422,7 @@ def findMinTimeTraversalOrder(
     rect_list: List[Rect],
     adjacency_graph: List[List[int]],
     start_rect: int,
+    robot: RobotCostConfig,
 ) -> List[int]:
     """从 start_rect 出发，沿邻接边访问所有可达矩形的近似最优顺序。
 
@@ -417,7 +462,7 @@ def findMinTimeTraversalOrder(
                     continue
                 # 所有可达矩形最终都要覆盖一次，覆盖成本之和与顺序无关；
                 # 此处只比较会随顺序变化的转场成本。
-                step = computeTransitionCost(rect_list[current], rect_list[j])
+                step = computeTransitionCost(rect_list[current], rect_list[j], robot)
                 wd = _warnsdorff_degree(j, visited)
                 cands.append((step, wd, j))
             if not cands:
@@ -433,9 +478,9 @@ def findMinTimeTraversalOrder(
     # 该候选允许重复节点，并对任意连通邻接图都能给出有效路线。即使图中
     # 不存在哈密顿路径，后面的贪心搜索失败也不会中断 pipeline。
     best_order = _minimum_spanning_tree_walk(
-        rect_list, adjacency_graph, start_rect, reachable_rects
+        rect_list, adjacency_graph, start_rect, reachable_rects, robot
     )
-    best_cost = _traversal_order_cost(rect_list, best_order)
+    best_cost = _traversal_order_cost(rect_list, best_order, robot)
     # 先纯贪心一次，再对前 2～4 名随机抽样多轮，在可行完整路径里取总代价最小
     attempts: list[tuple[int, int]] = [(1, 1)] + [(2, 128)] + [(3, 160)] + [(4, 160)]
     for pick_top, reps in attempts:
@@ -444,7 +489,7 @@ def findMinTimeTraversalOrder(
             tour = _one_greedy_run(rng, pick_top)
             if tour is None:
                 continue
-            c = _traversal_order_cost(rect_list, tour)
+            c = _traversal_order_cost(rect_list, tour, robot)
             if c < best_cost:
                 best_cost = c
                 best_order = tour
@@ -453,6 +498,9 @@ def findMinTimeTraversalOrder(
 
 def main():
     """与 main_pipeline.segment_map_into_rectangles 一致的分割流程，再跑邻接图与 TSP 顺序。"""
+    from src.configuration import load_experiment_config
+
+    robot = load_experiment_config().robot
     map_path = "map.png"
     grid_size = 1
     min_edge_length = 2.5
@@ -503,7 +551,14 @@ def main():
         Rect(r.x1, r.y1, r.x2, r.y2) for r in candidates_row + candidates_col_unmasked
     ]
     selected_bg = [Rect(r.x1, r.y1, r.x2, r.y2) for r in selected_rects]
-    rect_list = repairConnectivity(selected_bg, all_candidates_bg, min_edge_length)
+    rect_list = repairConnectivity(
+        selected_bg,
+        all_candidates_bg,
+        min_edge_length,
+        grid_map=grid_map,
+        pixel_size=pixel_size,
+        grid_size=grid_size,
+    )
     if len(rect_list) > len(selected_bg):
         print(f"[connectivity] inserted {len(rect_list) - len(selected_bg)} bridge rect(s)")
 
@@ -520,7 +575,7 @@ def main():
     unreachable_rects = [i for i in range(len(rect_list)) if i not in reachable_rects]
     print(f"reachable_rects: {reachable_rects}")
     print(f"unreachable_rects: {unreachable_rects}")
-    seq = findMinTimeTraversalOrder(rect_list, adjacency_graph, start_rect)
+    seq = findMinTimeTraversalOrder(rect_list, adjacency_graph, start_rect, robot)
     print(f"start_rect (largest area): {start_rect}")
     print(f"seq: {seq}")
     return None

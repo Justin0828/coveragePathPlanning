@@ -1,5 +1,7 @@
 from __future__ import annotations
+import argparse
 from dataclasses import dataclass
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -81,9 +83,18 @@ def generateMap(
 
 def saveMapPNG(map: np.ndarray, file_path: str) -> None: # origin='lower'表示地图的左下角为原点，点（x, y）用map[y, x]表示
     """保存地图到PNG文件"""
+    Path(file_path).parent.mkdir(parents=True, exist_ok=True)
     plt.imsave(file_path, map, cmap='gray', origin='lower')
 
 def main():
+    parser = argparse.ArgumentParser(description="生成随机矩形障碍物占据地图。")
+    parser.add_argument(
+        "--output",
+        default="experiments/fields2cover_comparison/maps/random_map.png",
+    )
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
+    np.random.seed(args.seed)
     world_width = 20.0
     world_height = 40.0
     pixel_size = 0.2
@@ -92,7 +103,7 @@ def main():
     n_obstacles = 10
     max_trials = 100
     map = generateMap(world_width, world_height, pixel_size, width_range, height_range, n_obstacles, max_trials)
-    saveMapPNG(map, 'map.png')
+    saveMapPNG(map, args.output)
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,11 @@
+{
+  "pixel_size": 0.5,
+  "width_pixels": 170,
+  "height_pixels": 131,
+  "origin_x": 0.0,
+  "origin_y": 0.0,
+  "source_coordinate_system": "planar",
+  "projected_coordinate_system": "planar",
+  "utm_zone": null,
+  "utm_hemisphere": null
+}

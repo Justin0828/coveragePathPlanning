@@ -71,7 +71,8 @@ def resterizeMap(
     n_rows, n_cols = map.shape
     # 为了后续栅格化，需要对map进行扩展，补全使用0（障碍物）
     new_n_rows, new_n_cols = int(np.ceil(n_rows / grid_size)) * grid_size, int(np.ceil(n_cols / grid_size)) * grid_size
-    extended_map = np.zeros((new_n_rows, new_n_cols), dtype=np.bool_)
+    # 扩展出来的地图外区域必须视为障碍物，防止末端栅格越出原地图。
+    extended_map = np.ones((new_n_rows, new_n_cols), dtype=np.bool_)
     extended_map[0:n_rows, 0:n_cols] = map == 0 # map是灰度图，0为障碍物，1为空闲；map==0代表障碍物，因此在bool图中赋值为1，表示is_obstacle
     # 补全后，计算栅格化后的地图尺寸
     grid_n_rows = int(new_n_rows / grid_size)
@@ -90,18 +91,52 @@ def resterizeMap(
                 grid_map[i, j] = 1 # 整栅格为障碍物
     return grid_map
 
+
+def _rectKey(rect: Rect) -> tuple[float, float, float, float]:
+    return (rect.x1, rect.y1, rect.x2, rect.y2)
+
+
+def deduplicateCandidates(candidates: list[Rect]) -> list[Rect]:
+    """按坐标去除重复候选，并保留第一次出现的确定性顺序。"""
+    unique: dict[tuple[float, float, float, float], Rect] = {}
+    for rect in candidates:
+        unique.setdefault(_rectKey(rect), rect)
+    return list(unique.values())
+
+
+def _topCandidates(candidates: list[Rect], k: int | None) -> list[Rect]:
+    """对单条扫描线上的候选去重，再按面积取前 k 个。"""
+    unique = deduplicateCandidates(candidates)
+    if k is None:
+        return unique
+    if k <= 0:
+        raise ValueError("candidate_top_k 必须为正数。")
+    return sorted(
+        unique,
+        key=lambda rect: (-rect.area, rect.x1, rect.y1, rect.x2, rect.y2),
+    )[:k]
+
 def generateCandidates(
     grid_map: np.ndarray,
     min_edge_length: float,
     pixel_size: float,
     grid_size: int,
-    k: int,
+    k: int | None,
 ) -> list[Rect]:
-    """行扫描候选矩形：对每一行，向上扩展高度，向左右扩展宽度"""
+    """行扫描候选：每行去重后按面积保留前 k 个；k=None 保留全部。"""
+    if k is not None and k <= 0:
+        raise ValueError("candidate_top_k 必须为正数。")
     candidates = []
     for row in range(grid_map.shape[0]):
-        candidates.extend(_computeRowCandidates(grid_map, row, min_edge_length, pixel_size, grid_size))
-    return candidates
+        row_candidates = _computeRowCandidates(
+            grid_map,
+            row,
+            min_edge_length,
+            pixel_size,
+            grid_size,
+        )
+        candidates.extend(_topCandidates(row_candidates, k))
+    return deduplicateCandidates(candidates)
 
 
 def generateColCandidates(
@@ -109,13 +144,22 @@ def generateColCandidates(
     min_edge_length: float,
     pixel_size: float,
     grid_size: int,
-    k: int,
+    k: int | None,
 ) -> list[Rect]:
-    """列扫描候选矩形：对每一列，向右扩展宽度，向上下扩展高度"""
+    """列扫描候选：每列去重后按面积保留前 k 个；k=None 保留全部。"""
+    if k is not None and k <= 0:
+        raise ValueError("candidate_top_k 必须为正数。")
     candidates = []
     for col in range(grid_map.shape[1]):
-        candidates.extend(_computeColCandidates(grid_map, col, min_edge_length, pixel_size, grid_size))
-    return candidates
+        col_candidates = _computeColCandidates(
+            grid_map,
+            col,
+            min_edge_length,
+            pixel_size,
+            grid_size,
+        )
+        candidates.extend(_topCandidates(col_candidates, k))
+    return deduplicateCandidates(candidates)
 
 
 def maskRects(
@@ -126,21 +170,45 @@ def maskRects(
 ) -> np.ndarray:
     """返回 grid_map 的副本，将 rects 覆盖的区域标记为障碍物（值=1）"""
     masked = grid_map.copy()
-    n_rows = grid_map.shape[0]
     cell_size = grid_size * pixel_size
     for rect in rects:
         col1 = int(round(rect.x1 / cell_size))
         col2 = int(round(rect.x2 / cell_size))
-        gy1 = int(round(rect.y1 / cell_size))  # world y bottom → low grid_y
-        gy2 = int(round(rect.y2 / cell_size))  # world y top   → high grid_y
-        # grid_map row = n_rows - grid_y - 1, so higher grid_y → smaller row
-        row1 = max(0, n_rows - gy2)
-        row2 = min(n_rows, n_rows - gy1)
+        # loadMap 已经执行 flipud，因此 grid_map 的第 0 行就是世界坐标
+        # 最下方的栅格。这里不能再次上下翻转。
+        row1 = int(round(rect.y1 / cell_size))
+        row2 = int(round(rect.y2 / cell_size))
+        row1 = max(0, row1)
+        row2 = min(grid_map.shape[0], row2)
         col1 = max(0, col1)
         col2 = min(grid_map.shape[1], col2)
         if row1 < row2 and col1 < col2:
             masked[row1:row2, col1:col2] = 1
     return masked
+
+
+def isRectObstacleFree(
+    rect: Rect,
+    grid_map: np.ndarray,
+    pixel_size: float,
+    grid_size: int,
+) -> bool:
+    """矩形必须完整位于地图内，且只包含空闲栅格（grid_map 值为 0）。"""
+    cell_size = grid_size * pixel_size
+    col1 = int(round(rect.x1 / cell_size))
+    col2 = int(round(rect.x2 / cell_size))
+    row1 = int(round(rect.y1 / cell_size))
+    row2 = int(round(rect.y2 / cell_size))
+    if (
+        row1 < 0
+        or col1 < 0
+        or row2 > grid_map.shape[0]
+        or col2 > grid_map.shape[1]
+        or row1 >= row2
+        or col1 >= col2
+    ):
+        return False
+    return not np.any(grid_map[row1:row2, col1:col2])
 
 
 def buildCoverCount(
@@ -161,33 +229,34 @@ def _computeRowCandidates(
     pixel_size: float, # 一个像素对应多少米
     grid_size: int, # 一个栅格边长为多少像素
 ) -> list[Rect]:
-    """计算当前行的矩形候选列表"""
-    # 获取高度list：从当前行开始，向上遍历，遇到障碍物或边界为止，记录高度
-    heights = np.zeros(grid_map.shape[1], dtype=np.int32)
+    """计算一条水平扫描线上的无障碍矩形候选。"""
+    n_rows, n_cols = grid_map.shape
+    # row 是从图像上方开始的扫描序号；grid_y 才是 grid_map/world 的 y。
+    grid_y = n_rows - row - 1
+    heights = np.zeros(n_cols, dtype=np.int32)
     candidates = []
-    for col in range(grid_map.shape[1]):
-        n_rows = grid_map.shape[0]
-        x, y = coordinateRowcolToGrid(n_rows, row, col)
-        if grid_map[y, x] == 1:
-            heights[col] = 0
-            continue
-        h = 0
-        r = row
-        while grid_map[y, x] == 0 and y < grid_map.shape[0] - 1:
-            h += 1
+
+    # 高度是从当前空闲格开始、沿 +y 方向连续空闲格的数量。
+    # 先完整计算扫描线，避免右侧尚未计算的 0 截断横向扩展。
+    for col in range(n_cols):
+        y = grid_y
+        while y < n_rows and grid_map[y, col] == 0:
+            heights[col] += 1
             y += 1
-        heights[col] = h
+
+    for col, h_value in enumerate(heights):
+        h = int(h_value)
+        if h == 0:
+            continue
         # 左右扩展
         left_idx = col
         while left_idx > 0 and heights[left_idx - 1] >= h:
             left_idx -= 1
         right_idx = col
-        while right_idx < grid_map.shape[1] - 1 and heights[right_idx + 1] >= h:
+        while right_idx < n_cols - 1 and heights[right_idx + 1] >= h:
             right_idx += 1
-        # 添加候选矩形：当前拟添加(left_idx, row)到(right_idx, row + h)的矩形，需要检查边长
-        # 先计算Rect
-        x1, y1 = coordinateGridToWorld(left_idx, n_rows - row - 1, grid_size, pixel_size)
-        x2, y2 = coordinateGridToWorld(right_idx + 1, n_rows - row + h, grid_size, pixel_size)
+        x1, y1 = coordinateGridToWorld(left_idx, grid_y, grid_size, pixel_size)
+        x2, y2 = coordinateGridToWorld(right_idx + 1, grid_y + h, grid_size, pixel_size)
         if x2 - x1 >= min_edge_length and y2 - y1 >= min_edge_length:
             candidates.append(Rect(x1, y1, x2, y2))
     return candidates
@@ -199,35 +268,33 @@ def _computeColCandidates(
     pixel_size: float,
     grid_size: int,
 ) -> list[Rect]:
-    """计算当前列的矩形候选列表：向右扩展宽度，上下扩展高度"""
+    """计算一条垂直扫描线上的无障碍矩形候选。"""
     n_rows = grid_map.shape[0]
     n_cols = grid_map.shape[1]
     widths = np.zeros(n_rows, dtype=np.int32)
     candidates = []
-    for row in range(n_rows):
-        x, y = coordinateRowcolToGrid(n_rows, row, col)
-        if grid_map[y, x] == 1:
-            widths[row] = 0
-            continue
-        # 向右扩展宽度（+x 方向）
-        w = 0
-        cx = x
-        while grid_map[y, cx] == 0 and cx < n_cols - 1:
-            w += 1
+
+    # widths 直接按 grid_y 索引；grid_map 第 0 行对应世界坐标底部。
+    for grid_y in range(n_rows):
+        cx = col
+        while cx < n_cols and grid_map[grid_y, cx] == 0:
+            widths[grid_y] += 1
             cx += 1
-        widths[row] = w
-        # 上下扩展（行索引方向：row 减小 = y 增大 = 世界坐标向上）
-        top_idx = row
-        while top_idx > 0 and widths[top_idx - 1] >= w:
-            top_idx -= 1
-        bottom_idx = row
-        while bottom_idx < n_rows - 1 and widths[bottom_idx + 1] >= w:
-            bottom_idx += 1
-        # 转换为世界坐标
+
+    for grid_y, w_value in enumerate(widths):
+        w = int(w_value)
+        if w == 0:
+            continue
+        low_y = grid_y
+        while low_y > 0 and widths[low_y - 1] >= w:
+            low_y -= 1
+        high_y = grid_y
+        while high_y < n_rows - 1 and widths[high_y + 1] >= w:
+            high_y += 1
         x1, _ = coordinateGridToWorld(col, 0, grid_size, pixel_size)
         x2, _ = coordinateGridToWorld(col + w, 0, grid_size, pixel_size)
-        _, y1 = coordinateGridToWorld(0, n_rows - bottom_idx - 1, grid_size, pixel_size)
-        _, y2 = coordinateGridToWorld(0, n_rows - top_idx, grid_size, pixel_size)
+        _, y1 = coordinateGridToWorld(0, low_y, grid_size, pixel_size)
+        _, y2 = coordinateGridToWorld(0, high_y + 1, grid_size, pixel_size)
         if x2 - x1 >= min_edge_length and y2 - y1 >= min_edge_length:
             candidates.append(Rect(x1, y1, x2, y2))
     return candidates
@@ -313,18 +380,17 @@ def _expandPoint(
     right_col = col
     while right_col < n_cols - 1 and grid_map[row, right_col + 1] == 0:
         right_col += 1
-    # 在 [left_col, right_col] 范围内垂直扩展
-    top_row = row
-    while top_row > 0 and np.all(grid_map[top_row - 1, left_col:right_col + 1] == 0):
-        top_row -= 1
-    bot_row = row
-    while bot_row < n_rows - 1 and np.all(grid_map[bot_row + 1, left_col:right_col + 1] == 0):
-        bot_row += 1
-    # 转换为世界坐标（top_row=最小行索引=最高世界y，bot_row=最大行索引=最低世界y）
+    # grid_map 行号随世界 y 增加，不需要进行图像坐标式的上下翻转。
+    low_row = row
+    while low_row > 0 and np.all(grid_map[low_row - 1, left_col:right_col + 1] == 0):
+        low_row -= 1
+    high_row = row
+    while high_row < n_rows - 1 and np.all(grid_map[high_row + 1, left_col:right_col + 1] == 0):
+        high_row += 1
     x1, _ = coordinateGridToWorld(left_col,       0,               grid_size, pixel_size)
     x2, _ = coordinateGridToWorld(right_col + 1,  0,               grid_size, pixel_size)
-    _, y1  = coordinateGridToWorld(0, n_rows - bot_row - 1,        grid_size, pixel_size)
-    _, y2  = coordinateGridToWorld(0, n_rows - top_row,            grid_size, pixel_size)
+    _, y1 = coordinateGridToWorld(0, low_row, grid_size, pixel_size)
+    _, y2 = coordinateGridToWorld(0, high_row + 1, grid_size, pixel_size)
     return Rect(x1, y1, x2, y2)
 
 
@@ -371,9 +437,12 @@ def drawSegmentation(
     pixel_size: float,
 ) -> np.ndarray:
     """在map中绘制选中的矩形"""
+    obstacle_mask = map == 0
     for rect in selected_rectangles:
         _drawRect(map, rect, pixel_size)
         _drawBoundary(map, rect, pixel_size)
+    # 可视化绝不能擦除原地图中的障碍物。
+    map[obstacle_mask] = 0
     return map
 
 def _drawRect(
@@ -439,7 +508,14 @@ def main():
     candidates_col_unmasked = generateColCandidates(grid_map, min_edge_length, pixel_size, grid_size, 10)
     all_cands_bg = [bg.Rect(r.x1, r.y1, r.x2, r.y2) for r in candidates_row + candidates_col_unmasked]
     selected_bg  = [bg.Rect(r.x1, r.y1, r.x2, r.y2) for r in selected_rectangles]
-    repaired_bg  = bg.repairConnectivity(selected_bg, all_cands_bg, min_edge_length)
+    repaired_bg = bg.repairConnectivity(
+        selected_bg,
+        all_cands_bg,
+        min_edge_length,
+        grid_map=grid_map,
+        pixel_size=pixel_size,
+        grid_size=grid_size,
+    )
     if len(repaired_bg) > len(selected_bg):
         print(f"连通性修复: 插入了 {len(repaired_bg) - len(selected_bg)} 个桥接矩形")
     repaired = [Rect(r.x1, r.y1, r.x2, r.y2) for r in repaired_bg]

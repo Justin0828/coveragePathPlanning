@@ -1,0 +1,40 @@
+{
+  "experiment_name": "map_test1",
+  "random_seed": 42,
+  "robot_config": "experiments/configs/robot_config_default.json",
+  "map": {
+    "path": "experiments/connectivity_repair_ablation/maps/map_test1.png",
+    "pixel_size": 0.5
+  },
+  "segmentation": {
+    "grid_size": 1,
+    "min_edge_length": 2.5,
+    "alpha": 0.5,
+    "beta": 2.0,
+    "candidate_top_k": 20,
+    "candidate_scan_strategy": "row_then_col"
+  },
+  "connectivity": {
+    "strategy": "none"
+  },
+  "traversal": {
+    "start_rect": null
+  },
+  "rendering": {
+    "sample_rate": 2.0,
+    "colors": {
+      "coverage": [30, 144, 255],
+      "trail": [255, 196, 0],
+      "robot": [220, 40, 40]
+    }
+  },
+  "outputs": {
+    "directory": "experiments/connectivity_repair_ablation/results/map_test1/without_repair",
+    "metrics_json": "metrics.json",
+    "config_snapshot": "config_snapshot.json",
+    "segmentation_image": "segmentation.png",
+    "traversal_image": "traversal_order.png",
+    "coverage_video": "coverage.mp4",
+    "coverage_image": "coverage_final.png"
+  }
+}

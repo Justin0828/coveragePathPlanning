@@ -1,5 +1,0 @@
-numpy
-pillow
-matplotlib
-imageio
-imageio-ffmpeg

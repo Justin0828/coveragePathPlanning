@@ -1,0 +1,37 @@
+{
+  "experiment_name": "parkingGraph",
+  "random_seed": 42,
+  "robot_config": "experiments/vehicle_speed_comparison/configs/robots/robot_speed_1p0.json",
+  "map": {
+    "path": "experiments/vehicle_speed_comparison/maps/parkingGraph.png",
+    "pixel_size": 0.5
+  },
+  "segmentation": {
+    "grid_size": 1,
+    "min_edge_length": 2.5,
+    "alpha": 0.5,
+    "beta": 2.0,
+    "candidate_top_k": 20,
+    "candidate_scan_strategy": "row_then_col"
+  },
+  "connectivity": {"strategy": "candidate_bridge"},
+  "motion": {"work_speed_policy": "commanded"},
+  "traversal": {"start_rect": null},
+  "rendering": {
+    "sample_rate": 2.0,
+    "colors": {
+      "coverage": [30, 144, 255],
+      "trail": [255, 196, 0],
+      "robot": [220, 40, 40]
+    }
+  },
+  "outputs": {
+    "directory": "experiments/vehicle_speed_comparison/results/parkingGraph/speed_1p0",
+    "metrics_json": "metrics.json",
+    "config_snapshot": "config_snapshot.json",
+    "segmentation_image": "segmentation.png",
+    "traversal_image": "traversal_order.png",
+    "coverage_video": "coverage.mp4",
+    "coverage_image": "coverage_final.png"
+  }
+}
