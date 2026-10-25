@@ -7,7 +7,7 @@
 
 候选生成、贪婪选择、随机补洞、起始矩形、机器人参数、遍历算法、局部覆盖和覆盖评估均保持一致。起始矩形在连通性步骤之前确定，两组运行还会校验补全前矩形集合的 SHA-256。若无补全组包含多个分量，后续遍历只覆盖起点所在分量，结果会显式记录不可达矩形和可达分区面积，不能仅凭更短的运行时长判断其更优。
 
-当前仅使用仓库已有的 `map_test1` 和 `parkingGraph`。若某张地图没有插入桥接矩形，汇总中的 `ablation_triggered` 为 `false`，该地图按自然负对照解释。
+`map_test1` 和 `parkingGraph` 可作为自然负对照；`repair_zigzag_chain`、`repair_four_hubs` 和 `repair_ladder_bridge` 用于稳定触发桥接插入。若某张地图没有插入桥接矩形，汇总中的 `ablation_triggered` 为 `false`，该地图按自然负对照解释。
 
 运行全部配对实验：
 
@@ -19,6 +19,7 @@ python experiments/connectivity_repair_ablation/run_ablation.py
 
 ```bash
 python experiments/connectivity_repair_ablation/run_ablation.py --map parkingGraph
+python experiments/connectivity_repair_ablation/run_ablation.py --map repair_zigzag_chain
 ```
 
 结果结构：
@@ -30,6 +31,10 @@ results/
 │   ├── with_repair/
 │   └── comparison_summary.json
 ├── parkingGraph/
+│   ├── without_repair/
+│   ├── with_repair/
+│   └── comparison_summary.json
+├── repair_zigzag_chain/
 │   ├── without_repair/
 │   ├── with_repair/
 │   └── comparison_summary.json
