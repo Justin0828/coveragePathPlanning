@@ -1,67 +1,101 @@
-# pathCoverage
+# BiRect: coverage path planning for a swing-arm concrete troweling robot
 
-一个面向可重复实验的覆盖路径规划仓库。算法实现保持冻结，地图生成、实验配置、主编排和结果可视化彼此解耦。
+This repository contains the code, maps, experiment configurations and results for the paper
 
-## 目录
+> **BiRect: Coverage Path Planning via Bidirectional Rectangular Decomposition for a Swing-Arm Concrete Troweling Robot**
+> Yuzhi Pan, Jia-Rui Lin. Submitted to *Automation in Construction* (under review).
+
+BiRect plans an executable coverage route for a troweling robot whose circular disc is carried on a swing arm. On a known 2-D binary obstacle map it (1) builds bidirectional (row and column) rectangle candidates, fills holes and completes connectivity, (2) orders the rectangles on a feasible transition graph, and (3) turns every visit into coordinated base and swing-arm motion. Coverage ratio and execution time are evaluated from the area actually swept by the disc along the complete trajectory.
+
+## Repository layout
 
 ```text
-algorithms/                 # 冻结的算法实现与哈希清单
-generate_map/               # 可替换的地图生成逻辑
-src/main_pipeline.py        # 全局实验编排入口
-src/configuration.py        # JSON 配置读取与校验
-src/visualization.py        # 遍历顺序、覆盖视频和覆盖结果图
-experiments/fields2cover_comparison/       # 与 Fields2Cover 的方法对比
-experiments/segmentation_order_comparison/ # row/col 扫描顺序消融实验
-experiments/connectivity_repair_ablation/  # 连通性补全配对消融实验
-tests/                      # 结构、配置与可视化测试
+algorithms/            Rectangle segmentation, connectivity completion, graph building and
+                       single-rectangle coverage (frozen; hashes in algorithms/MANIFEST.json)
+generate_map/          Map generators (random obstacles, Fields2Cover GeoJSON -> raster)
+src/                   Pipeline entry point (main_pipeline.py), config loading, visualization
+experiments/
+  configs/                         Shared robot configuration (robot_config_default.json)
+  fields2cover_comparison/         BiRect side of the comparison with Fields2Cover
+  segmentation_order_comparison/   Row-only / column-only / row-then-column candidate scans
+  vehicle_speed_comparison/        Base speed vs. arm angular velocity (rho = v / omega_a)
+  connectivity_repair_ablation/    Additional ablation of connectivity completion (not reported in the paper)
+baselines/fields2cover/  Fields2Cover baseline runs (scripts, configs, GeoJSON maps, results)
+tests/                 Unit and integration tests
+docs/                  Problem/algorithm notes and the original Chinese README
 ```
 
-## 快速开始
+Each experiment directory has `configs/`, `maps/`, a runner script (where applicable) and `results/`.
 
-要求 Python 3.10 或更新版本。
+## Maps
+
+All maps are binary occupancy images at 0.5 m/pixel.
+
+| Name in the paper | File | Used in |
+|---|---|---|
+| `simple` | `map_test1.png` | all three experiments |
+| `complex` | `parkingGraph.png` (rasterised from Fields2Cover's `parkingGraph.geojson`) | all three experiments |
+| `scan_comb_corridors` | `experiments/segmentation_order_comparison/maps/scan_comb_corridors.png` | scan-strategy experiment |
+| `scan_mixed_weave` | `experiments/segmentation_order_comparison/maps/scan_mixed_weave.png` | scan-strategy experiment |
+| `scan_offset_rooms` | `experiments/segmentation_order_comparison/maps/scan_offset_rooms.png` | scan-strategy experiment |
+
+The three directional maps were selected with `experiments/segmentation_order_comparison/search_directional_maps.py`. The Fields2Cover baseline uses the metric GeoJSON versions in `baselines/fields2cover/maps/`.
+
+## Environment
+
+Python 3.10 or newer.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
+python -m unittest discover -s tests      # optional check
+```
+
+The Fields2Cover baseline additionally needs the Fields2Cover Python bindings (https://github.com/Fields2Cover/Fields2Cover, BSD-3-Clause) and GDAL's Python bindings (`osgeo`); see `baselines/fields2cover/README.md`.
+
+## Reproducing the experiments
+
+Run all commands from the repository root. Re-running a configuration overwrites its results.
+
+```bash
+# 1. BiRect vs. Fields2Cover (BiRect side)
 python -m src.main_pipeline --config experiments/fields2cover_comparison/configs/experiment_map_test1.json
-```
+python -m src.main_pipeline --config experiments/fields2cover_comparison/configs/experiment_parkingGraph.json
 
-成功运行时，标准输出是完整 JSON；同一份内容保存到
-`experiments/fields2cover_comparison/results/map_test1/metrics.json`。结果目录还包含：
+# 1b. Fields2Cover baseline (requires Fields2Cover bindings)
+python3 baselines/fields2cover/run_experiment.py --robot robot_baseline --map test1.geojson \
+    --run-name robot_baseline_test1_tool1p5_cruise2_turn0p5
+python3 baselines/fields2cover/run_experiment.py --robot robot_baseline --map parkingGraph.geojson \
+    --run-name robot_baseline_parkingGraph_tool1p5_cruise2_turn0p5
 
-- `segmentation.png`：矩形分割图；
-- `traversal_order.png`：矩形中心间的有向遍历顺序，箭头标签表示转移步数；
-- `coverage.mp4`：低采样位姿上的蓝色累计圆盘显示、黄色车体轨迹与红色机器人；
-- `coverage_final.png`：与 JSON `work_disc` 指标使用同一参数化圆盘扫掠掩膜的最终覆盖图；
-- `config_snapshot.json`：本次运行的完整配置快照。
-
-统一机器人基线位于 `experiments/configs/robot_config_default.json`。新地图实验使用
-`experiment_<map_name>.json`，且 `experiment_name` 必须等于地图文件名（不含扩展名）。
-所有相对路径均相对于仓库根目录解析，因此从任意工作目录启动结果一致。
-
-运行 row-only、col-only、row-then-col 三组候选扫描对比：
-
-```bash
+# 2. Candidate-scan strategies on the five maps
 python experiments/segmentation_order_comparison/run_comparison.py
+
+# 3. Base speed / arm angular velocity coupling (also writes the plots)
+python experiments/vehicle_speed_comparison/run_comparison.py
 ```
 
-产物按 `experiments/segmentation_order_comparison/results/<map_name>/<strategy>/`
-组织，每张地图的汇总指标位于其 `comparison_summary.json`。重复运行直接覆盖同名结果。
+## Results layout
 
-运行带/不带候选桥接的连通性补全消融：
+Results produced for the paper are committed (videos `*.mp4` are excluded; rerun to regenerate them).
 
-```bash
-python experiments/connectivity_repair_ablation/run_ablation.py
+```text
+experiments/fields2cover_comparison/results/<map>/                  metrics.json, config_snapshot.json,
+                                                                    segmentation.png, traversal_order.png, coverage_final.png
+experiments/segmentation_order_comparison/results/<map>/<strategy>/ same files per strategy
+experiments/segmentation_order_comparison/results/<map>/comparison_summary.json
+experiments/vehicle_speed_comparison/results/<map>/speed_<v>/       per-speed runs
+experiments/vehicle_speed_comparison/results/<map>/comparison_summary.{json,csv}, speed_ratio_curve.{png,pdf}
+baselines/fields2cover/results/<run>/                               metrics.json, validation.json, path.csv, path.png, route.png
 ```
 
-两组配置会校验补全前矩形哈希和起始矩形一致，并汇总连通分量、可达区域、
-圆盘覆盖率及连续运动段时长。当前两张地图若未触发桥接，会被明确标记为自然负对照。
+Reported metrics: full-trajectory coverage is `coverage.full_trajectory_disc.coverage_ratio` and execution time is `trajectory.duration_seconds` (summed over continuous motion segments, not Python run time). For the baseline, the motion-feasibility check is `path_validation.collision_free` and the area leaving the valid workspace is `path_validation.swept_area_outside_field_m2`.
 
-## 验证
+## Citation
 
-```bash
-python -m unittest discover -v
-```
+The paper is under review. Citation details will be added once it is published.
 
-测试会验证冻结算法源码的 SHA-256，并核对连通性策略、受控配置、覆盖统计和最终蓝色像素，同时确认规划条带指标与连续运动时长不受低采样位姿密度影响。
+## License
+
+No license file has been added yet.
