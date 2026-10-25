@@ -49,7 +49,7 @@ Python 3.10 or newer.
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python -m unittest discover -s tests      # optional check
+python -m unittest discover -s tests -t .   # optional check (36 tests)
 ```
 
 The Fields2Cover baseline additionally needs the Fields2Cover Python bindings (https://github.com/Fields2Cover/Fields2Cover, BSD-3-Clause) and GDAL's Python bindings (`osgeo`); see `baselines/fields2cover/README.md`.
