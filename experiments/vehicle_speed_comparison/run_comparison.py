@@ -17,6 +17,7 @@ EXPERIMENT_ROOT = Path(__file__).resolve().parent
 CONFIG_ROOT = EXPERIMENT_ROOT / "configs"
 ROBOT_CONFIG_ROOT = CONFIG_ROOT / "robots"
 RESULT_ROOT = EXPERIMENT_ROOT / "results"
+MAP_ALIASES = {"map_simple": "map_test1"}
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 if str(EXPERIMENT_ROOT) not in sys.path:
@@ -40,6 +41,14 @@ def available_maps() -> list[str]:
         path.stem.removeprefix("experiment_")
         for path in CONFIG_ROOT.glob("experiment_*.json")
     )
+
+
+def map_choices() -> list[str]:
+    return sorted(set(available_maps()) | set(MAP_ALIASES))
+
+
+def _internal_map_name(map_name: str) -> str:
+    return MAP_ALIASES.get(map_name, map_name)
 
 
 def available_robot_configs() -> list[tuple[float, Path, RobotConfig]]:
@@ -108,6 +117,10 @@ def _write_csv(rows: list[dict], output: Path) -> None:
 def _summary_row(report: dict) -> dict:
     trajectory = report["trajectory"]
     coverage = report["coverage"]
+    pixel_area_m2 = report["input"]["pixel_size_m"] ** 2
+    full_trajectory_covered_area_m2 = (
+        coverage["full_trajectory_disc"]["covered_free_px"] * pixel_area_m2
+    )
     speed = trajectory["configured_speed_limit_mps"]
     return {
         "speed_id": _speed_id(speed),
@@ -118,11 +131,19 @@ def _summary_row(report: dict) -> dict:
         "work_speed_policy": trajectory["work_speed_policy"],
         "work_speed_limited": trajectory["work_speed_limited"],
         "work_disc_coverage_ratio": coverage["work_disc"]["coverage_ratio"],
-        "covered_free_area_m2": coverage["covered_free_area_m2"],
+        "full_trajectory_disc_coverage_ratio": coverage["full_trajectory_disc"]["coverage_ratio"],
+        "work_covered_free_area_m2": coverage["covered_free_area_m2"],
+        "full_trajectory_covered_free_area_m2": full_trajectory_covered_area_m2,
+        "covered_free_area_m2": full_trajectory_covered_area_m2,
         "duration_seconds": trajectory["duration_seconds"],
         "work_duration_seconds": trajectory["work_duration_seconds"],
         "non_work_duration_seconds": trajectory["non_work_duration_seconds"],
-        "execution_seconds_per_covered_m2": coverage["execution_seconds_per_covered_m2"],
+        "work_execution_seconds_per_covered_m2": coverage["execution_seconds_per_covered_m2"],
+        "execution_seconds_per_covered_m2": (
+            trajectory["duration_seconds"] / full_trajectory_covered_area_m2
+            if full_trajectory_covered_area_m2 > 0
+            else None
+        ),
         "result_directory": str(
             Path(report["artifacts"]["metrics_json"]["path"]).parent
         ),
@@ -148,6 +169,7 @@ def _fixed_order(
 
 
 def _run_map(map_name: str, variants: list[tuple[float, Path, RobotConfig]]) -> dict:
+    map_name = _internal_map_name(map_name)
     base = load_experiment_config(CONFIG_ROOT / f"experiment_{map_name}.json")
     if base.work_speed_policy != "commanded":
         raise ValueError("车速实验必须配置 motion.work_speed_policy='commanded'。")
@@ -192,6 +214,8 @@ def _run_map(map_name: str, variants: list[tuple[float, Path, RobotConfig]]) -> 
             "summary_csv": str(csv_path.relative_to(REPOSITORY_ROOT)),
             "coverage_duration_curve": str(plot_paths[0].relative_to(REPOSITORY_ROOT)),
             "speed_effect_curve": str(plot_paths[1].relative_to(REPOSITORY_ROOT)),
+            "speed_ratio_curve_png": str(plot_paths[2].relative_to(REPOSITORY_ROOT)),
+            "speed_ratio_curve_pdf": str(plot_paths[3].relative_to(REPOSITORY_ROOT)),
         },
     }
     _write_json(summary, map_result_root / "comparison_summary.json")
@@ -211,7 +235,7 @@ def run_comparison(
             raise ValueError(f"缺少车速配置：{sorted(missing)}")
     if not variants:
         raise ValueError("没有可用的车速机器人配置。")
-    maps = map_names or available_maps()
+    maps = [_internal_map_name(map_name) for map_name in map_names] if map_names else available_maps()
     summaries = [_run_map(map_name, variants) for map_name in maps]
     return {
         "schema_version": "1.0",
@@ -225,7 +249,7 @@ def cli(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Compare coverage and duration at fixed arm speed and varying vehicle speeds."
     )
-    parser.add_argument("--map", action="append", choices=available_maps(), dest="map_names")
+    parser.add_argument("--map", action="append", choices=map_choices(), dest="map_names")
     parser.add_argument("--speed", action="append", type=float, dest="speeds")
     args = parser.parse_args(argv)
     try:

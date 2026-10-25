@@ -1,7 +1,7 @@
 # Vehicle-speed comparison
 
 本实验固定地图、分割、连通修复、遍历顺序、机器人几何和摆臂角速度，只改变汽车
-线速度，测量作业圆盘覆盖率与连续轨迹覆盖时长之间的权衡。
+线速度，测量全轨迹圆盘覆盖率与连续轨迹覆盖时长之间的权衡。
 
 ## 实验变量
 
@@ -35,7 +35,7 @@ python experiments/vehicle_speed_comparison/run_comparison.py --map parkingGraph
 
 # 指定一个或多个速度
 python experiments/vehicle_speed_comparison/run_comparison.py \
-  --map map_test1 --speed 1.0 --speed 2.0
+  --map map_simple --speed 1.0 --speed 2.0
 ```
 
 ## 结果
@@ -53,12 +53,15 @@ results/<map>/
 ├── comparison_summary.json
 ├── comparison_summary.csv
 ├── coverage_duration_curve.png
-└── speed_effect_curve.png
+├── speed_effect_curve.png
+├── speed_ratio_curve.png
+└── speed_ratio_curve.pdf
 ```
 
-主图 `coverage_duration_curve.png` 以总连续轨迹时长为横轴、最终作业圆盘覆盖率为
-纵轴，并为每个点标注车速。`speed_effect_curve.png` 以车速为横轴，同时展示覆盖率
-和总时长。
+主图 `speed_ratio_curve.png`/`speed_ratio_curve.pdf` 以车速与摆臂角速度比值
+`rho = v / omega_a` 为横轴，同时展示全轨迹圆盘覆盖率和总时长；
+`coverage_duration_curve.png` 与 `speed_effect_curve.png` 保留用于快速检查。
 
-正式覆盖率使用 `coverage.work_disc.coverage_ratio`，时长使用
+正式覆盖率使用 `coverage.full_trajectory_disc.coverage_ratio`，时长使用
 `trajectory.duration_seconds`；两者均来自连续运动段，不使用 Python 运行耗时。
+汇总 CSV 仍保留 `work_disc_coverage_ratio`，用于回溯有效作业覆盖率。
