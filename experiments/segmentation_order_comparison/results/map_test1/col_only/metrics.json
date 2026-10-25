@@ -1,0 +1,267 @@
+{
+  "schema_version": "1.0",
+  "status": "completed",
+  "experiment": {
+    "name": "map_test1",
+    "started_at": "2026-08-03T07:55:25.963528+00:00",
+    "finished_at": "2026-08-03T07:55:26.426546+00:00",
+    "config": "experiments/segmentation_order_comparison/configs/col_only/experiment_map_test1.json",
+    "robot_config": "experiments/configs/robot_config_default.json",
+    "random_seed": 42
+  },
+  "input": {
+    "map": "experiments/segmentation_order_comparison/maps/map_test1.png",
+    "map_sha256": "ac2d5d67533509fd89a44552eb9c16d699e355859baa97814a270cae46442a5a",
+    "map_shape_px": {
+      "height": 80,
+      "width": 40
+    },
+    "pixel_size_m": 0.5
+  },
+  "segmentation": {
+    "candidate_scan_strategy": "col_only",
+    "candidate_top_k_per_scanline": 20,
+    "scan_stage_order": [
+      "col"
+    ],
+    "row_candidate_count": 0,
+    "row_selected_count": 0,
+    "column_candidate_count": 115,
+    "column_selected_count": 3,
+    "candidate_count_total": 115,
+    "greedy_rectangle_count": 3,
+    "connectivity_candidate_count": 115,
+    "expanded_rectangle_count": 6,
+    "start_rectangle_before_connectivity": 0,
+    "start_rectangle_coordinates_before_connectivity": {
+      "x1": 7.5,
+      "y1": 0.0,
+      "x2": 13.0,
+      "y2": 40.0
+    },
+    "connectivity_strategy": "candidate_bridge",
+    "pre_repair_rectangles_sha256": "aaed914cd0fac7d8701eaad8cc2078c36c6955a014a6e4c63d80c94d28b9c6c4",
+    "component_count_before": 1,
+    "component_count_after": 1,
+    "component_sizes_before": [
+      6
+    ],
+    "component_sizes_after": [
+      6
+    ],
+    "fully_connected_before": true,
+    "fully_connected_after": true,
+    "connectivity_bridge_count": 0,
+    "connectivity_bridge_area_m2": 0,
+    "bridge_rectangles": [],
+    "final_rectangle_count": 6,
+    "greedy_partition": {
+      "total_free_px": 2444,
+      "covered_free_px": 1760,
+      "uncovered_free_px": 684,
+      "overlap_free_px": 0,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.7201309328968903,
+      "free_overlap_ratio": 0.0
+    },
+    "expanded_partition": {
+      "total_free_px": 2444,
+      "covered_free_px": 2444,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 836,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.34206219312602293
+    },
+    "final_partition": {
+      "total_free_px": 2444,
+      "covered_free_px": 2444,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 836,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.34206219312602293
+    }
+  },
+  "traversal": {
+    "start_rectangle": 0,
+    "start_rectangle_coordinates": {
+      "x1": 7.5,
+      "y1": 0.0,
+      "x2": 13.0,
+      "y2": 40.0
+    },
+    "order": [
+      0,
+      5,
+      1,
+      3,
+      2,
+      4
+    ],
+    "transition_count": 5,
+    "unique_rectangle_count": 6,
+    "revisit_count": 0,
+    "adjacency_edge_count": 9,
+    "total_rectangle_count": 6,
+    "reachable_rectangles": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "unreachable_rectangles": [],
+    "reachable_rectangle_count": 6,
+    "unreachable_rectangle_count": 0,
+    "reachable_rectangle_ratio": 1.0,
+    "all_rectangles_reachable": true,
+    "reachable_partition": {
+      "total_free_px": 2444,
+      "covered_free_px": 2444,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 836,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.34206219312602293
+    }
+  },
+  "trajectory": {
+    "pose_count": 1513,
+    "sample_rate_hz": 2.0,
+    "sampled_pose_duration_seconds": 756.0,
+    "duration_source": "continuous_motion_segments",
+    "duration_seconds": 696.8877249157046,
+    "work_duration_seconds": 139.78301272724536,
+    "non_work_duration_seconds": 557.1047121884592,
+    "phase_duration_seconds": {
+      "vehicle_turn": 355.4274832624999,
+      "entry": 37.50000000000001,
+      "arm_setup": 19.669361381681828,
+      "lane_change": 72.64867881431152,
+      "work": 139.78301272724536,
+      "exit": 43.43837685952734,
+      "arm_retract": 1.6936767833362496,
+      "transition": 26.727135087102255
+    },
+    "work_distance_m": 201.0,
+    "actual_average_work_speed_mps": 1.4379429665906944,
+    "actual_max_work_speed_mps": 2.0,
+    "configured_speed_limit_mps": 2.0,
+    "work_speed_policy": "coverage_safe",
+    "arm_angular_velocity_limit_deg_s": 90.0,
+    "work_speed_limited": false
+  },
+  "coverage": {
+    "source": "parametric_swept_disc",
+    "partition_coverage_ratio": 1.0,
+    "total_free_px": 2444,
+    "covered_free_px": 1776,
+    "uncovered_free_px": 668,
+    "coverage_ratio": 0.7266775777414075,
+    "covered_free_area_m2": 444.0,
+    "execution_seconds_per_covered_m2": 1.5695669480083436,
+    "covered_m2_per_execution_second": 0.6371184110807895,
+    "work_disc": {
+      "covered_free_px": 1776,
+      "uncovered_free_px": 668,
+      "coverage_ratio": 0.7266775777414075
+    },
+    "full_trajectory_disc": {
+      "covered_free_px": 2274,
+      "uncovered_free_px": 170,
+      "coverage_ratio": 0.9304418985270049
+    },
+    "geometry": {
+      "method": "parametric_swept_disc",
+      "disc_radius_m": 0.75,
+      "arm_length_m": 1.2,
+      "pixel_criterion": "pixel_center",
+      "geometry_tolerance_m": 0.0375,
+      "sampling_rate_independent": true,
+      "motion_segment_count": 265
+    }
+  },
+  "rectangles": [
+    {
+      "id": 0,
+      "x1": 7.5,
+      "y1": 0.0,
+      "x2": 13.0,
+      "y2": 40.0
+    },
+    {
+      "id": 1,
+      "x1": 0.0,
+      "y1": 0.0,
+      "x2": 3.0,
+      "y2": 40.0
+    },
+    {
+      "id": 2,
+      "x1": 17.5,
+      "y1": 0.0,
+      "x2": 20.0,
+      "y2": 40.0
+    },
+    {
+      "id": 3,
+      "x1": 0.0,
+      "y1": 35.0,
+      "x2": 20.0,
+      "y2": 40.0
+    },
+    {
+      "id": 4,
+      "x1": 0.0,
+      "y1": 0.0,
+      "x2": 20.0,
+      "y2": 4.5
+    },
+    {
+      "id": 5,
+      "x1": 0.0,
+      "y1": 15.0,
+      "x2": 20.0,
+      "y2": 24.5
+    }
+  ],
+  "runtime_seconds": {
+    "segmentation": 0.06372429197654128,
+    "traversal": 0.006591250188648701,
+    "pose_generation": 0.000889916904270649,
+    "rendering": 0.1349553749896586,
+    "total": 0.4633682081475854
+  },
+  "artifacts": {
+    "segmentation_image": {
+      "path": "experiments/segmentation_order_comparison/results/map_test1/col_only/segmentation.png",
+      "bytes": 347,
+      "sha256": "97d3ee28591bab4e56265c5653cd1c51c62ebd8650e77d237f9953e2b0129f91"
+    },
+    "traversal_image": {
+      "path": "experiments/segmentation_order_comparison/results/map_test1/col_only/traversal_order.png",
+      "bytes": 99525,
+      "sha256": "f9947b3eb957cd89920e05836ef9a733bdeacd7ba3b09faa1373d9dc9faedceb"
+    },
+    "coverage_video": {
+      "path": "experiments/segmentation_order_comparison/results/map_test1/col_only/coverage.mp4",
+      "bytes": 141821,
+      "sha256": "b5d7b7575a79ce5e28a399b27775ccd1f477c8efa0a1012d26b10e298ad6b2a9"
+    },
+    "coverage_image": {
+      "path": "experiments/segmentation_order_comparison/results/map_test1/col_only/coverage_final.png",
+      "bytes": 792,
+      "sha256": "b77f25eb23fefd93a46e2072041628acce5682ce1265a3ddd4278e6934bfa930"
+    },
+    "config_snapshot": {
+      "path": "experiments/segmentation_order_comparison/results/map_test1/col_only/config_snapshot.json",
+      "bytes": 1980,
+      "sha256": "73edf0b97f58d1b588c27dc2851c21a14e83ddbdf41cf34e12945b76f4a4c2bb"
+    },
+    "metrics_json": {
+      "path": "experiments/segmentation_order_comparison/results/map_test1/col_only/metrics.json"
+    }
+  }
+}

@@ -1,0 +1,314 @@
+{
+  "schema_version": "1.0",
+  "status": "completed",
+  "experiment": {
+    "name": "repair_zigzag_chain",
+    "started_at": "2026-07-10T02:59:46.379253+00:00",
+    "finished_at": "2026-07-10T02:59:48.018618+00:00",
+    "config": "experiments/connectivity_repair_ablation/configs/with_repair/experiment_repair_zigzag_chain.json",
+    "robot_config": "experiments/configs/robot_config_default.json",
+    "random_seed": 42
+  },
+  "input": {
+    "map": "experiments/connectivity_repair_ablation/maps/repair_zigzag_chain.png",
+    "map_sha256": "55a029d3e5f0e4116886ff0a0f9f3693c014fe65533cd18d37b91268969882dc",
+    "map_shape_px": {
+      "height": 110,
+      "width": 190
+    },
+    "pixel_size_m": 0.5
+  },
+  "segmentation": {
+    "candidate_scan_strategy": "row_then_col",
+    "candidate_top_k_per_scanline": 20,
+    "scan_stage_order": [
+      "row",
+      "col"
+    ],
+    "row_candidate_count": 158,
+    "row_selected_count": 3,
+    "column_candidate_count": 74,
+    "column_selected_count": 3,
+    "candidate_count_total": 232,
+    "greedy_rectangle_count": 6,
+    "connectivity_candidate_count": 459,
+    "expanded_rectangle_count": 7,
+    "start_rectangle_before_connectivity": 0,
+    "start_rectangle_coordinates_before_connectivity": {
+      "x1": 4.0,
+      "y1": 22.0,
+      "x2": 29.0,
+      "y2": 46.0
+    },
+    "connectivity_strategy": "candidate_bridge",
+    "pre_repair_rectangles_sha256": "50f3bdffece150176575c068d124db76aba294cac9c240d303104ec11e432e11",
+    "component_count_before": 3,
+    "component_count_after": 1,
+    "component_sizes_before": [
+      3,
+      3,
+      1
+    ],
+    "component_sizes_after": [
+      9
+    ],
+    "fully_connected_before": false,
+    "fully_connected_after": true,
+    "connectivity_bridge_count": 2,
+    "connectivity_bridge_area_m2": 184.5,
+    "bridge_rectangles": [
+      {
+        "x1": 57.5,
+        "y1": 5.0,
+        "x2": 60.0,
+        "y2": 26.0
+      },
+      {
+        "x1": 4.0,
+        "y1": 30.0,
+        "x2": 37.0,
+        "y2": 34.0
+      }
+    ],
+    "final_rectangle_count": 9,
+    "greedy_partition": {
+      "total_free_px": 7883,
+      "covered_free_px": 7508,
+      "uncovered_free_px": 375,
+      "overlap_free_px": 0,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.9524292781935811,
+      "free_overlap_ratio": 0.0
+    },
+    "expanded_partition": {
+      "total_free_px": 7883,
+      "covered_free_px": 7592,
+      "uncovered_free_px": 291,
+      "overlap_free_px": 396,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.963085119878219,
+      "free_overlap_ratio": 0.050234682227578334
+    },
+    "final_partition": {
+      "total_free_px": 7883,
+      "covered_free_px": 7592,
+      "uncovered_free_px": 291,
+      "overlap_free_px": 1134,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.963085119878219,
+      "free_overlap_ratio": 0.1438538627426107
+    }
+  },
+  "traversal": {
+    "start_rectangle": 0,
+    "start_rectangle_coordinates": {
+      "x1": 4.0,
+      "y1": 22.0,
+      "x2": 29.0,
+      "y2": 46.0
+    },
+    "order": [
+      0,
+      8,
+      6,
+      1,
+      6,
+      4,
+      6,
+      8,
+      3,
+      5,
+      3,
+      7,
+      2
+    ],
+    "transition_count": 12,
+    "unique_rectangle_count": 9,
+    "revisit_count": 4,
+    "adjacency_edge_count": 10,
+    "total_rectangle_count": 9,
+    "reachable_rectangles": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "unreachable_rectangles": [],
+    "reachable_rectangle_count": 9,
+    "unreachable_rectangle_count": 0,
+    "reachable_rectangle_ratio": 1.0,
+    "all_rectangles_reachable": true,
+    "reachable_partition": {
+      "total_free_px": 7883,
+      "covered_free_px": 7592,
+      "uncovered_free_px": 291,
+      "overlap_free_px": 1134,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.963085119878219,
+      "free_overlap_ratio": 0.1438538627426107
+    }
+  },
+  "trajectory": {
+    "pose_count": 2562,
+    "sample_rate_hz": 2.0,
+    "sampled_pose_duration_seconds": 1280.5,
+    "duration_source": "continuous_motion_segments",
+    "duration_seconds": 1221.5591186980405,
+    "work_duration_seconds": 460.33676012648584,
+    "non_work_duration_seconds": 761.2223585715547,
+    "phase_duration_seconds": {
+      "vehicle_turn": 418.5718644948054,
+      "entry": 31.69999999999998,
+      "arm_setup": 29.784441860343268,
+      "lane_change": 60.79774254455604,
+      "work": 460.33676012648584,
+      "exit": 50.71744818601665,
+      "arm_retract": 1.8283512846217287,
+      "transition": 167.82251020121157
+    },
+    "work_distance_m": 623.0,
+    "actual_average_work_speed_mps": 1.3533570506705124,
+    "actual_max_work_speed_mps": 2.0,
+    "configured_speed_limit_mps": 2.0,
+    "work_speed_policy": "coverage_safe",
+    "arm_angular_velocity_limit_deg_s": 90.0,
+    "work_speed_limited": false
+  },
+  "coverage": {
+    "source": "parametric_swept_disc",
+    "partition_coverage_ratio": 0.963085119878219,
+    "total_free_px": 7883,
+    "covered_free_px": 5501,
+    "uncovered_free_px": 2382,
+    "coverage_ratio": 0.6978307750856273,
+    "covered_free_area_m2": 1375.25,
+    "execution_seconds_per_covered_m2": 0.888245132665363,
+    "covered_m2_per_execution_second": 1.125815344463857,
+    "work_disc": {
+      "covered_free_px": 5501,
+      "uncovered_free_px": 2382,
+      "coverage_ratio": 0.6978307750856273
+    },
+    "full_trajectory_disc": {
+      "covered_free_px": 6057,
+      "uncovered_free_px": 1826,
+      "coverage_ratio": 0.7683622986172777
+    },
+    "geometry": {
+      "method": "parametric_swept_disc",
+      "disc_radius_m": 0.75,
+      "arm_length_m": 1.2,
+      "pixel_criterion": "pixel_center",
+      "geometry_tolerance_m": 0.0375,
+      "sampling_rate_independent": true,
+      "motion_segment_count": 308
+    }
+  },
+  "rectangles": [
+    {
+      "id": 0,
+      "x1": 4.0,
+      "y1": 22.0,
+      "x2": 29.0,
+      "y2": 46.0
+    },
+    {
+      "id": 1,
+      "x1": 66.0,
+      "y1": 22.0,
+      "x2": 91.0,
+      "y2": 46.0
+    },
+    {
+      "id": 2,
+      "x1": 35.0,
+      "y1": 5.0,
+      "x2": 60.0,
+      "y2": 26.0
+    },
+    {
+      "id": 3,
+      "x1": 29.0,
+      "y1": 26.0,
+      "x2": 37.0,
+      "y2": 34.0
+    },
+    {
+      "id": 4,
+      "x1": 58.0,
+      "y1": 26.0,
+      "x2": 66.0,
+      "y2": 34.0
+    },
+    {
+      "id": 5,
+      "x1": 37.0,
+      "y1": 27.0,
+      "x2": 45.0,
+      "y2": 30.0
+    },
+    {
+      "id": 6,
+      "x1": 51.0,
+      "y1": 27.0,
+      "x2": 91.0,
+      "y2": 30.0
+    },
+    {
+      "id": 7,
+      "x1": 57.5,
+      "y1": 5.0,
+      "x2": 60.0,
+      "y2": 26.0
+    },
+    {
+      "id": 8,
+      "x1": 4.0,
+      "y1": 30.0,
+      "x2": 37.0,
+      "y2": 34.0
+    }
+  ],
+  "runtime_seconds": {
+    "segmentation": 0.4603932909667492,
+    "traversal": 0.0045919581316411495,
+    "pose_generation": 0.001276292372494936,
+    "rendering": 0.6335972920060158,
+    "total": 1.6396859167143703
+  },
+  "artifacts": {
+    "segmentation_image": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_zigzag_chain/with_repair/segmentation.png",
+      "bytes": 759,
+      "sha256": "fd0ce3eb0ddb7b868f887ab682685500595f2d0e236924c63c99684661275791"
+    },
+    "traversal_image": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_zigzag_chain/with_repair/traversal_order.png",
+      "bytes": 120630,
+      "sha256": "86b9e34352144f195d88e70568016761035e2be70acbffbcf66f2ad882436371"
+    },
+    "coverage_video": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_zigzag_chain/with_repair/coverage.mp4",
+      "bytes": 300906,
+      "sha256": "9562b31494e91c65f2992ad4bceab013369f93ac73238352735b67cb9512558f"
+    },
+    "coverage_image": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_zigzag_chain/with_repair/coverage_final.png",
+      "bytes": 1354,
+      "sha256": "7c786e74d91f0b253265e34b1f4f8204bc7d08c5785ae575ea303d7d25a701b5"
+    },
+    "config_snapshot": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_zigzag_chain/with_repair/config_snapshot.json",
+      "bytes": 2099,
+      "sha256": "4590ae5bd5d09ff5e6150e4f599f64756c725fbf728d23f6c5013a770a72e7f1"
+    },
+    "metrics_json": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_zigzag_chain/with_repair/metrics.json"
+    }
+  }
+}

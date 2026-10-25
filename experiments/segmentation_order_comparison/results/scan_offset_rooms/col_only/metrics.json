@@ -1,0 +1,321 @@
+{
+  "schema_version": "1.0",
+  "status": "completed",
+  "experiment": {
+    "name": "scan_offset_rooms",
+    "started_at": "2026-08-03T06:47:08.658089+00:00",
+    "finished_at": "2026-08-03T06:47:10.072132+00:00",
+    "config": "experiments/segmentation_order_comparison/configs/col_only/experiment_scan_offset_rooms.json",
+    "robot_config": "experiments/configs/robot_config_default.json",
+    "random_seed": 42
+  },
+  "input": {
+    "map": "experiments/segmentation_order_comparison/maps/scan_offset_rooms.png",
+    "map_sha256": "9d5998194f45d9b6af4427ab4c12ff1d9d59489a3e59d2dd70f00dcafe17803c",
+    "map_shape_px": {
+      "height": 110,
+      "width": 150
+    },
+    "pixel_size_m": 0.5
+  },
+  "segmentation": {
+    "candidate_scan_strategy": "col_only",
+    "candidate_top_k_per_scanline": 20,
+    "scan_stage_order": [
+      "col"
+    ],
+    "row_candidate_count": 0,
+    "row_selected_count": 0,
+    "column_candidate_count": 292,
+    "column_selected_count": 6,
+    "candidate_count_total": 292,
+    "greedy_rectangle_count": 6,
+    "connectivity_candidate_count": 292,
+    "expanded_rectangle_count": 12,
+    "start_rectangle_before_connectivity": 0,
+    "start_rectangle_coordinates_before_connectivity": {
+      "x1": 9.0,
+      "y1": 25.5,
+      "x2": 73.0,
+      "y2": 31.5
+    },
+    "connectivity_strategy": "candidate_bridge",
+    "pre_repair_rectangles_sha256": "e9f26f39098336744012d2dad2d4f9c049d74780eb664a6e31d3acec420f7c32",
+    "component_count_before": 1,
+    "component_count_after": 1,
+    "component_sizes_before": [
+      12
+    ],
+    "component_sizes_after": [
+      12
+    ],
+    "fully_connected_before": true,
+    "fully_connected_after": true,
+    "connectivity_bridge_count": 0,
+    "connectivity_bridge_area_m2": 0,
+    "bridge_rectangles": [],
+    "final_rectangle_count": 12,
+    "greedy_partition": {
+      "total_free_px": 5103,
+      "covered_free_px": 4175,
+      "uncovered_free_px": 928,
+      "overlap_free_px": 404,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.8181461885165588,
+      "free_overlap_ratio": 0.07916911620615324
+    },
+    "expanded_partition": {
+      "total_free_px": 5103,
+      "covered_free_px": 5103,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 1875,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.36743092298647856
+    },
+    "final_partition": {
+      "total_free_px": 5103,
+      "covered_free_px": 5103,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 1875,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.36743092298647856
+    }
+  },
+  "traversal": {
+    "start_rectangle": 0,
+    "start_rectangle_coordinates": {
+      "x1": 9.0,
+      "y1": 25.5,
+      "x2": 73.0,
+      "y2": 31.5
+    },
+    "order": [
+      0,
+      3,
+      8,
+      1,
+      7,
+      9,
+      6,
+      5,
+      11,
+      2,
+      10,
+      4
+    ],
+    "transition_count": 11,
+    "unique_rectangle_count": 12,
+    "revisit_count": 0,
+    "adjacency_edge_count": 24,
+    "total_rectangle_count": 12,
+    "reachable_rectangles": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "unreachable_rectangles": [],
+    "reachable_rectangle_count": 12,
+    "unreachable_rectangle_count": 0,
+    "reachable_rectangle_ratio": 1.0,
+    "all_rectangles_reachable": true,
+    "reachable_partition": {
+      "total_free_px": 5103,
+      "covered_free_px": 5103,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 1875,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.36743092298647856
+    }
+  },
+  "trajectory": {
+    "pose_count": 3128,
+    "sample_rate_hz": 2.0,
+    "sampled_pose_duration_seconds": 1563.5,
+    "duration_source": "continuous_motion_segments",
+    "duration_seconds": 1443.3129283642197,
+    "work_duration_seconds": 348.5190750858708,
+    "non_work_duration_seconds": 1094.793853278349,
+    "phase_duration_seconds": {
+      "vehicle_turn": 664.5073545009939,
+      "entry": 52.474999999999994,
+      "arm_setup": 65.79940630653347,
+      "lane_change": 128.53380071431226,
+      "work": 348.5190750858708,
+      "exit": 102.55912884795421,
+      "arm_retract": 3.7578740401198436,
+      "transition": 77.16128886843516
+    },
+    "work_distance_m": 487.5,
+    "actual_average_work_speed_mps": 1.3987756620778533,
+    "actual_max_work_speed_mps": 2.0,
+    "configured_speed_limit_mps": 2.0,
+    "work_speed_policy": "coverage_safe",
+    "arm_angular_velocity_limit_deg_s": 90.0,
+    "work_speed_limited": false
+  },
+  "coverage": {
+    "source": "parametric_swept_disc",
+    "partition_coverage_ratio": 1.0,
+    "total_free_px": 5103,
+    "covered_free_px": 3860,
+    "uncovered_free_px": 1243,
+    "coverage_ratio": 0.7564177934548305,
+    "covered_free_area_m2": 965.0,
+    "execution_seconds_per_covered_m2": 1.4956610656624039,
+    "covered_m2_per_execution_second": 0.668600676288325,
+    "work_disc": {
+      "covered_free_px": 3860,
+      "uncovered_free_px": 1243,
+      "coverage_ratio": 0.7564177934548305
+    },
+    "full_trajectory_disc": {
+      "covered_free_px": 4670,
+      "uncovered_free_px": 433,
+      "coverage_ratio": 0.9151479521849892
+    },
+    "geometry": {
+      "method": "parametric_swept_disc",
+      "disc_radius_m": 0.75,
+      "arm_length_m": 1.2,
+      "pixel_criterion": "pixel_center",
+      "geometry_tolerance_m": 0.0375,
+      "sampling_rate_independent": true,
+      "motion_segment_count": 503
+    }
+  },
+  "rectangles": [
+    {
+      "id": 0,
+      "x1": 9.0,
+      "y1": 25.5,
+      "x2": 73.0,
+      "y2": 31.5
+    },
+    {
+      "id": 1,
+      "x1": 34.0,
+      "y1": 6.0,
+      "x2": 65.0,
+      "y2": 12.0
+    },
+    {
+      "id": 2,
+      "x1": 38.5,
+      "y1": 39.5,
+      "x2": 73.0,
+      "y2": 43.5
+    },
+    {
+      "id": 3,
+      "x1": 33.0,
+      "y1": 8.0,
+      "x2": 36.5,
+      "y2": 53.5
+    },
+    {
+      "id": 4,
+      "x1": 65.5,
+      "y1": 3.5,
+      "x2": 69.5,
+      "y2": 46.0
+    },
+    {
+      "id": 5,
+      "x1": 46.0,
+      "y1": 13.0,
+      "x2": 51.0,
+      "y2": 34.5
+    },
+    {
+      "id": 6,
+      "x1": 45.5,
+      "y1": 25.5,
+      "x2": 59.5,
+      "y2": 34.5
+    },
+    {
+      "id": 7,
+      "x1": 59.5,
+      "y1": 0.5,
+      "x2": 63.5,
+      "y2": 31.5
+    },
+    {
+      "id": 8,
+      "x1": 33.0,
+      "y1": 8.0,
+      "x2": 40.5,
+      "y2": 31.5
+    },
+    {
+      "id": 9,
+      "x1": 54.5,
+      "y1": 25.5,
+      "x2": 59.5,
+      "y2": 43.5
+    },
+    {
+      "id": 10,
+      "x1": 65.5,
+      "y1": 25.5,
+      "x2": 73.0,
+      "y2": 45.5
+    },
+    {
+      "id": 11,
+      "x1": 47.0,
+      "y1": 13.0,
+      "x2": 50.0,
+      "y2": 43.5
+    }
+  ],
+  "runtime_seconds": {
+    "segmentation": 0.23875366616994143,
+    "traversal": 0.009155750274658203,
+    "pose_generation": 0.002375083975493908,
+    "rendering": 0.6560627077706158,
+    "total": 1.4143669581972063
+  },
+  "artifacts": {
+    "segmentation_image": {
+      "path": "experiments/segmentation_order_comparison/results/scan_offset_rooms/col_only/segmentation.png",
+      "bytes": 762,
+      "sha256": "8df5166c97d83e6e6e6e8dfa9f7bc432ec5033098a258eabdf3d9ac2c0b89227"
+    },
+    "traversal_image": {
+      "path": "experiments/segmentation_order_comparison/results/scan_offset_rooms/col_only/traversal_order.png",
+      "bytes": 142471,
+      "sha256": "cfdc3a96bdd37422aaf5b3f8fa547799de89ae1e988b0349745d2d9b99a83c8a"
+    },
+    "coverage_video": {
+      "path": "experiments/segmentation_order_comparison/results/scan_offset_rooms/col_only/coverage.mp4",
+      "bytes": 363853,
+      "sha256": "5a1f80ea80466a1595ebbb6c8069009b06b9500c56920f2f828025f5757be96e"
+    },
+    "coverage_image": {
+      "path": "experiments/segmentation_order_comparison/results/scan_offset_rooms/col_only/coverage_final.png",
+      "bytes": 1737,
+      "sha256": "83982bb1e0ed1632668efd25a82970fd58281dd9d2cc877f08cc1ee12dc2be9f"
+    },
+    "config_snapshot": {
+      "path": "experiments/segmentation_order_comparison/results/scan_offset_rooms/col_only/config_snapshot.json",
+      "bytes": 2060,
+      "sha256": "cc31d780e77e1e51c2690a4b8cc5f7951001684ec808aa2ac59e06a7fd81478e"
+    },
+    "metrics_json": {
+      "path": "experiments/segmentation_order_comparison/results/scan_offset_rooms/col_only/metrics.json"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "experiment_name": "map_test1",
+  "config_path": "experiments/segmentation_order_comparison/configs/row_then_col/experiment_map_test1.json",
+  "robot_config_path": "experiments/configs/robot_config_default.json",
+  "map_path": "experiments/segmentation_order_comparison/maps/map_test1.png",
+  "output_directory": "experiments/segmentation_order_comparison/results/map_test1/row_then_col",
+  "output_video_path": "experiments/segmentation_order_comparison/results/map_test1/row_then_col/coverage.mp4",
+  "segmentation_preview_path": "experiments/segmentation_order_comparison/results/map_test1/row_then_col/segmentation.png",
+  "traversal_preview_path": "experiments/segmentation_order_comparison/results/map_test1/row_then_col/traversal_order.png",
+  "coverage_image_path": "experiments/segmentation_order_comparison/results/map_test1/row_then_col/coverage_final.png",
+  "metrics_path": "experiments/segmentation_order_comparison/results/map_test1/row_then_col/metrics.json",
+  "config_snapshot_path": "experiments/segmentation_order_comparison/results/map_test1/row_then_col/config_snapshot.json",
+  "pixel_size": 0.5,
+  "grid_size": 1,
+  "min_edge_length": 2.5,
+  "alpha": 0.5,
+  "beta": 2.0,
+  "candidate_top_k": 20,
+  "candidate_scan_strategy": "row_then_col",
+  "connectivity_strategy": "candidate_bridge",
+  "work_speed_policy": "coverage_safe",
+  "start_rect": null,
+  "traversal_order": null,
+  "sample_rate": 2.0,
+  "coverage_color": [
+    30,
+    144,
+    255
+  ],
+  "trail_color": [
+    255,
+    196,
+    0
+  ],
+  "robot_color": [
+    220,
+    40,
+    40
+  ],
+  "random_seed": 42,
+  "robot": {
+    "disc_radius": 0.75,
+    "arm_length": 1.2,
+    "car_width": 0.8,
+    "car_half_length": 1.0,
+    "pivot_to_car_center": 0.3,
+    "speed_limit": 2.0,
+    "angular_velocity_limit": 30.0,
+    "arm_angle_limit": [
+      -90.0,
+      90.0
+    ],
+    "arm_angular_velocity_limit": 90.0,
+    "initial_heading": 0.0,
+    "initial_arm_angle": 0.0,
+    "initial_car_position": [
+      0.0,
+      0.0
+    ]
+  }
+}

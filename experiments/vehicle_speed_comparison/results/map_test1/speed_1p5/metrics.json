@@ -1,0 +1,300 @@
+{
+  "schema_version": "1.0",
+  "status": "completed",
+  "experiment": {
+    "name": "map_test1",
+    "started_at": "2026-06-29T06:41:06.305646+00:00",
+    "finished_at": "2026-06-29T06:41:06.849856+00:00",
+    "config": "experiments/vehicle_speed_comparison/configs/experiment_map_test1.json",
+    "robot_config": "experiments/vehicle_speed_comparison/configs/robots/robot_speed_1p5.json",
+    "random_seed": 42
+  },
+  "input": {
+    "map": "experiments/vehicle_speed_comparison/maps/map_test1.png",
+    "map_sha256": "ac2d5d67533509fd89a44552eb9c16d699e355859baa97814a270cae46442a5a",
+    "map_shape_px": {
+      "height": 80,
+      "width": 40
+    },
+    "pixel_size_m": 0.5
+  },
+  "segmentation": {
+    "candidate_scan_strategy": "row_then_col",
+    "candidate_top_k_per_scanline": 20,
+    "scan_stage_order": [
+      "row",
+      "col"
+    ],
+    "row_candidate_count": 236,
+    "row_selected_count": 3,
+    "column_candidate_count": 30,
+    "column_selected_count": 6,
+    "candidate_count_total": 266,
+    "greedy_rectangle_count": 9,
+    "connectivity_candidate_count": 345,
+    "expanded_rectangle_count": 9,
+    "start_rectangle_before_connectivity": 0,
+    "start_rectangle_coordinates_before_connectivity": {
+      "x1": 7.5,
+      "y1": 0.0,
+      "x2": 13.0,
+      "y2": 40.0
+    },
+    "connectivity_strategy": "candidate_bridge",
+    "pre_repair_rectangles_sha256": "34b470032ebdef4c719c6ef338df773c3a3228b25f7b76df51e67feef1c2bc10",
+    "component_count_before": 1,
+    "component_count_after": 1,
+    "component_sizes_before": [
+      9
+    ],
+    "component_sizes_after": [
+      9
+    ],
+    "fully_connected_before": true,
+    "fully_connected_after": true,
+    "connectivity_bridge_count": 0,
+    "connectivity_bridge_area_m2": 0,
+    "bridge_rectangles": [],
+    "final_rectangle_count": 9,
+    "greedy_partition": {
+      "total_free_px": 2444,
+      "covered_free_px": 2444,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 0,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.0
+    },
+    "expanded_partition": {
+      "total_free_px": 2444,
+      "covered_free_px": 2444,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 0,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.0
+    },
+    "final_partition": {
+      "total_free_px": 2444,
+      "covered_free_px": 2444,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 0,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.0
+    }
+  },
+  "traversal": {
+    "start_rectangle": 0,
+    "start_rectangle_coordinates": {
+      "x1": 7.5,
+      "y1": 0.0,
+      "x2": 13.0,
+      "y2": 40.0
+    },
+    "order": [
+      0,
+      4,
+      2,
+      6,
+      2,
+      8,
+      2,
+      4,
+      0,
+      3,
+      1,
+      5,
+      1,
+      7
+    ],
+    "transition_count": 13,
+    "unique_rectangle_count": 9,
+    "revisit_count": 5,
+    "adjacency_edge_count": 12,
+    "total_rectangle_count": 9,
+    "reachable_rectangles": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "unreachable_rectangles": [],
+    "reachable_rectangle_count": 9,
+    "unreachable_rectangle_count": 0,
+    "reachable_rectangle_ratio": 1.0,
+    "all_rectangles_reachable": true,
+    "reachable_partition": {
+      "total_free_px": 2444,
+      "covered_free_px": 2444,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 0,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.0
+    }
+  },
+  "trajectory": {
+    "pose_count": 2013,
+    "sample_rate_hz": 2.0,
+    "sampled_pose_duration_seconds": 1006.0,
+    "duration_source": "continuous_motion_segments",
+    "duration_seconds": 928.8135784321042,
+    "work_duration_seconds": 75.66666666666663,
+    "non_work_duration_seconds": 853.1469117654376,
+    "phase_duration_seconds": {
+      "vehicle_turn": 509.8435147837266,
+      "entry": 55.93333333333335,
+      "arm_setup": 42.4425880666497,
+      "lane_change": 110.62841361980416,
+      "work": 75.66666666666663,
+      "exit": 36.88626611713273,
+      "arm_retract": 2.3181452629829824,
+      "transition": 95.09465058180811
+    },
+    "work_distance_m": 113.5,
+    "actual_average_work_speed_mps": 1.5000000000000007,
+    "actual_max_work_speed_mps": 1.5,
+    "configured_speed_limit_mps": 1.5,
+    "work_speed_policy": "commanded",
+    "arm_angular_velocity_limit_deg_s": 90.0,
+    "work_speed_limited": false
+  },
+  "coverage": {
+    "source": "parametric_swept_disc",
+    "partition_coverage_ratio": 1.0,
+    "total_free_px": 2444,
+    "covered_free_px": 1314,
+    "uncovered_free_px": 1130,
+    "coverage_ratio": 0.5376432078559739,
+    "covered_free_area_m2": 328.5,
+    "execution_seconds_per_covered_m2": 2.827438594922692,
+    "covered_m2_per_execution_second": 0.3536770000224681,
+    "work_disc": {
+      "covered_free_px": 1314,
+      "uncovered_free_px": 1130,
+      "coverage_ratio": 0.5376432078559739
+    },
+    "full_trajectory_disc": {
+      "covered_free_px": 2171,
+      "uncovered_free_px": 273,
+      "coverage_ratio": 0.8882978723404256
+    },
+    "geometry": {
+      "method": "parametric_swept_disc",
+      "disc_radius_m": 0.75,
+      "arm_length_m": 1.2,
+      "pixel_criterion": "pixel_center",
+      "geometry_tolerance_m": 0.0375,
+      "sampling_rate_independent": true,
+      "motion_segment_count": 372
+    }
+  },
+  "rectangles": [
+    {
+      "id": 0,
+      "x1": 7.5,
+      "y1": 0.0,
+      "x2": 13.0,
+      "y2": 40.0
+    },
+    {
+      "id": 1,
+      "x1": 0.0,
+      "y1": 0.0,
+      "x2": 3.0,
+      "y2": 40.0
+    },
+    {
+      "id": 2,
+      "x1": 17.5,
+      "y1": 0.0,
+      "x2": 20.0,
+      "y2": 40.0
+    },
+    {
+      "id": 3,
+      "x1": 3.0,
+      "y1": 15.0,
+      "x2": 7.5,
+      "y2": 24.5
+    },
+    {
+      "id": 4,
+      "x1": 13.0,
+      "y1": 15.0,
+      "x2": 17.5,
+      "y2": 24.5
+    },
+    {
+      "id": 5,
+      "x1": 3.0,
+      "y1": 35.0,
+      "x2": 7.5,
+      "y2": 40.0
+    },
+    {
+      "id": 6,
+      "x1": 13.0,
+      "y1": 35.0,
+      "x2": 17.5,
+      "y2": 40.0
+    },
+    {
+      "id": 7,
+      "x1": 3.0,
+      "y1": 0.0,
+      "x2": 7.5,
+      "y2": 4.5
+    },
+    {
+      "id": 8,
+      "x1": 13.0,
+      "y1": 0.0,
+      "x2": 17.5,
+      "y2": 4.5
+    }
+  ],
+  "runtime_seconds": {
+    "segmentation": 0.13149716658517718,
+    "traversal": 1.8915627151727676e-05,
+    "pose_generation": 0.0011033331975340843,
+    "rendering": 0.1734442082233727,
+    "total": 0.5445883329957724
+  },
+  "artifacts": {
+    "segmentation_image": {
+      "path": "experiments/vehicle_speed_comparison/results/map_test1/speed_1p5/segmentation.png",
+      "bytes": 377,
+      "sha256": "cf546688b1b32a7b70d87b08a531ec3f4af654fa9cf34a1595c932008a3628bd"
+    },
+    "traversal_image": {
+      "path": "experiments/vehicle_speed_comparison/results/map_test1/speed_1p5/traversal_order.png",
+      "bytes": 114682,
+      "sha256": "8ed332af468b8a816e48092f8481d2100c3f352defccd2f4262dd2abf3d70118"
+    },
+    "coverage_video": {
+      "path": "experiments/vehicle_speed_comparison/results/map_test1/speed_1p5/coverage.mp4",
+      "bytes": 191361,
+      "sha256": "74fee0d4ce7bbdac494c90d66527d88713f6594798363275aa9f7ec950fd8b27"
+    },
+    "coverage_image": {
+      "path": "experiments/vehicle_speed_comparison/results/map_test1/speed_1p5/coverage_final.png",
+      "bytes": 1045,
+      "sha256": "5a1114cc864b535356d5170e619b839b5cfb9576572c28f711f8801e0731d9e0"
+    },
+    "config_snapshot": {
+      "path": "experiments/vehicle_speed_comparison/results/map_test1/speed_1p5/config_snapshot.json",
+      "bytes": 2058,
+      "sha256": "5aca4fbf319a975e7f0dae3240e59cf662b0a65e329feb1de07b7caecf8c1e46"
+    },
+    "metrics_json": {
+      "path": "experiments/vehicle_speed_comparison/results/map_test1/speed_1p5/metrics.json"
+    }
+  }
+}

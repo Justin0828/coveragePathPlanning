@@ -8,6 +8,6 @@ dist/
 *.egg-info/
 .DS_Store
 
-# Generated artifacts live inside each comparison experiment.
-experiments/**/results/**
-!experiments/**/results/.gitkeep
+# Results used in the paper are tracked; coverage videos are large and regenerable.
+experiments/**/results/**/*.mp4
+baselines/**/results/**/*.mp4

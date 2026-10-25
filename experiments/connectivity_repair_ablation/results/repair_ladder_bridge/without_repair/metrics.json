@@ -1,0 +1,332 @@
+{
+  "schema_version": "1.0",
+  "status": "completed",
+  "experiment": {
+    "name": "repair_ladder_bridge",
+    "started_at": "2026-07-10T02:59:51.175301+00:00",
+    "finished_at": "2026-07-10T02:59:52.601677+00:00",
+    "config": "experiments/connectivity_repair_ablation/configs/without_repair/experiment_repair_ladder_bridge.json",
+    "robot_config": "experiments/configs/robot_config_default.json",
+    "random_seed": 42
+  },
+  "input": {
+    "map": "experiments/connectivity_repair_ablation/maps/repair_ladder_bridge.png",
+    "map_sha256": "3f0c20aefca36c3f4c95845a5a9c99295a5cfbe87327fd67b452d2f2f33e7e85",
+    "map_shape_px": {
+      "height": 120,
+      "width": 200
+    },
+    "pixel_size_m": 0.5
+  },
+  "segmentation": {
+    "candidate_scan_strategy": "row_then_col",
+    "candidate_top_k_per_scanline": 20,
+    "scan_stage_order": [
+      "row",
+      "col"
+    ],
+    "row_candidate_count": 238,
+    "row_selected_count": 6,
+    "column_candidate_count": 124,
+    "column_selected_count": 7,
+    "candidate_count_total": 362,
+    "greedy_rectangle_count": 13,
+    "connectivity_candidate_count": 649,
+    "expanded_rectangle_count": 13,
+    "start_rectangle_before_connectivity": 0,
+    "start_rectangle_coordinates_before_connectivity": {
+      "x1": 4.0,
+      "y1": 35.0,
+      "x2": 29.0,
+      "y2": 53.0
+    },
+    "connectivity_strategy": "none",
+    "pre_repair_rectangles_sha256": "7c46f9ad628c2a16531c7e4bc4ab125921ff1cff07ee33addd4e6ac6e7ea98d9",
+    "component_count_before": 2,
+    "component_count_after": 2,
+    "component_sizes_before": [
+      9,
+      4
+    ],
+    "component_sizes_after": [
+      9,
+      4
+    ],
+    "fully_connected_before": false,
+    "fully_connected_after": false,
+    "connectivity_bridge_count": 0,
+    "connectivity_bridge_area_m2": 0,
+    "bridge_rectangles": [],
+    "final_rectangle_count": 13,
+    "greedy_partition": {
+      "total_free_px": 9859,
+      "covered_free_px": 9568,
+      "uncovered_free_px": 291,
+      "overlap_free_px": 20,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.9704838218886297,
+      "free_overlap_ratio": 0.00202860330662339
+    },
+    "expanded_partition": {
+      "total_free_px": 9859,
+      "covered_free_px": 9568,
+      "uncovered_free_px": 291,
+      "overlap_free_px": 20,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.9704838218886297,
+      "free_overlap_ratio": 0.00202860330662339
+    },
+    "final_partition": {
+      "total_free_px": 9859,
+      "covered_free_px": 9568,
+      "uncovered_free_px": 291,
+      "overlap_free_px": 20,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.9704838218886297,
+      "free_overlap_ratio": 0.00202860330662339
+    }
+  },
+  "traversal": {
+    "start_rectangle": 0,
+    "start_rectangle_coordinates": {
+      "x1": 4.0,
+      "y1": 35.0,
+      "x2": 29.0,
+      "y2": 53.0
+    },
+    "order": [
+      0,
+      7,
+      12,
+      5,
+      10,
+      4,
+      10,
+      5,
+      11,
+      6,
+      2
+    ],
+    "transition_count": 10,
+    "unique_rectangle_count": 9,
+    "revisit_count": 2,
+    "adjacency_edge_count": 14,
+    "total_rectangle_count": 13,
+    "reachable_rectangles": [
+      0,
+      2,
+      4,
+      5,
+      6,
+      7,
+      10,
+      11,
+      12
+    ],
+    "unreachable_rectangles": [
+      1,
+      3,
+      8,
+      9
+    ],
+    "reachable_rectangle_count": 9,
+    "unreachable_rectangle_count": 4,
+    "reachable_rectangle_ratio": 0.6923076923076923,
+    "all_rectangles_reachable": false,
+    "reachable_partition": {
+      "total_free_px": 9859,
+      "covered_free_px": 5408,
+      "uncovered_free_px": 4451,
+      "overlap_free_px": 20,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.5485343341109646,
+      "free_overlap_ratio": 0.00202860330662339
+    }
+  },
+  "trajectory": {
+    "pose_count": 1822,
+    "sample_rate_hz": 2.0,
+    "sampled_pose_duration_seconds": 910.5,
+    "duration_source": "continuous_motion_segments",
+    "duration_seconds": 857.1779924730398,
+    "work_duration_seconds": 299.1976948185978,
+    "non_work_duration_seconds": 557.980297654442,
+    "phase_duration_seconds": {
+      "vehicle_turn": 377.8366607434202,
+      "entry": 26.44999999999998,
+      "arm_setup": 29.962472287522292,
+      "lane_change": 48.868326372442816,
+      "work": 299.1976948185978,
+      "exit": 35.19958020161154,
+      "arm_retract": 2.0156180268678563,
+      "transition": 37.64764002257753
+    },
+    "work_distance_m": 341.0,
+    "actual_average_work_speed_mps": 1.1397146632655266,
+    "actual_max_work_speed_mps": 2.0,
+    "configured_speed_limit_mps": 2.0,
+    "work_speed_policy": "coverage_safe",
+    "arm_angular_velocity_limit_deg_s": 90.0,
+    "work_speed_limited": false
+  },
+  "coverage": {
+    "source": "parametric_swept_disc",
+    "partition_coverage_ratio": 0.9704838218886297,
+    "total_free_px": 9859,
+    "covered_free_px": 3750,
+    "uncovered_free_px": 6109,
+    "coverage_ratio": 0.3803631199918856,
+    "covered_free_area_m2": 937.5,
+    "execution_seconds_per_covered_m2": 0.9143231919712425,
+    "covered_m2_per_execution_second": 1.0937051676924456,
+    "work_disc": {
+      "covered_free_px": 3750,
+      "uncovered_free_px": 6109,
+      "coverage_ratio": 0.3803631199918856
+    },
+    "full_trajectory_disc": {
+      "covered_free_px": 4326,
+      "uncovered_free_px": 5533,
+      "coverage_ratio": 0.4387868952226392
+    },
+    "geometry": {
+      "method": "parametric_swept_disc",
+      "disc_radius_m": 0.75,
+      "arm_length_m": 1.2,
+      "pixel_criterion": "pixel_center",
+      "geometry_tolerance_m": 0.0375,
+      "sampling_rate_independent": true,
+      "motion_segment_count": 271
+    }
+  },
+  "rectangles": [
+    {
+      "id": 0,
+      "x1": 4.0,
+      "y1": 35.0,
+      "x2": 29.0,
+      "y2": 53.0
+    },
+    {
+      "id": 1,
+      "x1": 71.0,
+      "y1": 35.0,
+      "x2": 96.0,
+      "y2": 53.0
+    },
+    {
+      "id": 2,
+      "x1": 4.0,
+      "y1": 9.0,
+      "x2": 29.0,
+      "y2": 27.0
+    },
+    {
+      "id": 3,
+      "x1": 71.0,
+      "y1": 9.0,
+      "x2": 96.0,
+      "y2": 27.0
+    },
+    {
+      "id": 4,
+      "x1": 39.0,
+      "y1": 22.0,
+      "x2": 46.0,
+      "y2": 40.0
+    },
+    {
+      "id": 5,
+      "x1": 54.0,
+      "y1": 22.0,
+      "x2": 61.0,
+      "y2": 40.0
+    },
+    {
+      "id": 6,
+      "x1": 29.0,
+      "y1": 17.0,
+      "x2": 39.0,
+      "y2": 24.0
+    },
+    {
+      "id": 7,
+      "x1": 29.0,
+      "y1": 38.0,
+      "x2": 39.0,
+      "y2": 45.0
+    },
+    {
+      "id": 8,
+      "x1": 61.0,
+      "y1": 17.0,
+      "x2": 71.0,
+      "y2": 24.0
+    },
+    {
+      "id": 9,
+      "x1": 61.0,
+      "y1": 38.0,
+      "x2": 71.0,
+      "y2": 45.0
+    },
+    {
+      "id": 10,
+      "x1": 46.0,
+      "y1": 28.0,
+      "x2": 54.0,
+      "y2": 33.0
+    },
+    {
+      "id": 11,
+      "x1": 38.5,
+      "y1": 17.0,
+      "x2": 41.0,
+      "y2": 22.0
+    },
+    {
+      "id": 12,
+      "x1": 38.5,
+      "y1": 40.0,
+      "x2": 41.0,
+      "y2": 45.0
+    }
+  ],
+  "runtime_seconds": {
+    "segmentation": 0.5151537079364061,
+    "traversal": 0.005869166925549507,
+    "pose_generation": 0.0010462920181453228,
+    "rendering": 0.5079726250842214,
+    "total": 1.4267212077975273
+  },
+  "artifacts": {
+    "segmentation_image": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_ladder_bridge/without_repair/segmentation.png",
+      "bytes": 841,
+      "sha256": "417e0883efa1a01bb2d301386e86a1e14c8900987f4f8af533e7936b9b39cee1"
+    },
+    "traversal_image": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_ladder_bridge/without_repair/traversal_order.png",
+      "bytes": 114073,
+      "sha256": "2016683691dcbdc89cafce6b313f8e76fd1fb815588f8fc171c0554e3e97d3ed"
+    },
+    "coverage_video": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_ladder_bridge/without_repair/coverage.mp4",
+      "bytes": 199490,
+      "sha256": "5a92c6175e059a1c08b8a50c5677c2380e3328da2ac9dc79aee305ceff49e75c"
+    },
+    "coverage_image": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_ladder_bridge/without_repair/coverage_final.png",
+      "bytes": 1610,
+      "sha256": "17f8bb400513aa70fe2fa9a257c20d4f5ee11ac6332bdc4453247bac629e4947"
+    },
+    "config_snapshot": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_ladder_bridge/without_repair/config_snapshot.json",
+      "bytes": 2121,
+      "sha256": "3b38cb304b0de34be92df0b9ee53321dd99d76931952532596e9819aeccf04b4"
+    },
+    "metrics_json": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_ladder_bridge/without_repair/metrics.json"
+    }
+  }
+}

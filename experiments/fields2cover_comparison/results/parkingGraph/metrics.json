@@ -1,0 +1,445 @@
+{
+  "schema_version": "1.0",
+  "status": "completed",
+  "experiment": {
+    "name": "parkingGraph",
+    "started_at": "2026-07-01T03:24:21.860906+00:00",
+    "finished_at": "2026-07-01T03:24:39.841632+00:00",
+    "config": "experiments/fields2cover_comparison/configs/experiment_parkingGraph.json",
+    "robot_config": "experiments/configs/robot_config_default.json",
+    "random_seed": 42
+  },
+  "input": {
+    "map": "experiments/fields2cover_comparison/maps/parkingGraph.png",
+    "map_sha256": "0371ba9ff535e575aa3babeed3790988e9cdc2f20c3efebef7e53fa85b031764",
+    "map_shape_px": {
+      "height": 131,
+      "width": 170
+    },
+    "pixel_size_m": 0.5
+  },
+  "segmentation": {
+    "candidate_scan_strategy": "row_then_col",
+    "candidate_top_k_per_scanline": 20,
+    "scan_stage_order": [
+      "row",
+      "col"
+    ],
+    "row_candidate_count": 1196,
+    "row_selected_count": 10,
+    "column_candidate_count": 0,
+    "column_selected_count": 0,
+    "candidate_count_total": 1196,
+    "greedy_rectangle_count": 10,
+    "connectivity_candidate_count": 2513,
+    "expanded_rectangle_count": 24,
+    "start_rectangle_before_connectivity": 0,
+    "start_rectangle_coordinates_before_connectivity": {
+      "x1": 0.0,
+      "y1": 58.5,
+      "x2": 85.0,
+      "y2": 65.5
+    },
+    "connectivity_strategy": "candidate_bridge",
+    "pre_repair_rectangles_sha256": "88f2c84e8c3361be300da6e62041b914cc15bd6db4398ee364b5aecbfa81ff9f",
+    "component_count_before": 1,
+    "component_count_after": 1,
+    "component_sizes_before": [
+      24
+    ],
+    "component_sizes_after": [
+      24
+    ],
+    "fully_connected_before": true,
+    "fully_connected_after": true,
+    "connectivity_bridge_count": 0,
+    "connectivity_bridge_area_m2": 0,
+    "bridge_rectangles": [],
+    "final_rectangle_count": 24,
+    "greedy_partition": {
+      "total_free_px": 17176,
+      "covered_free_px": 14998,
+      "uncovered_free_px": 2178,
+      "overlap_free_px": 0,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.8731951560316721,
+      "free_overlap_ratio": 0.0
+    },
+    "expanded_partition": {
+      "total_free_px": 17176,
+      "covered_free_px": 17176,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 12941,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.7534350256171402
+    },
+    "final_partition": {
+      "total_free_px": 17176,
+      "covered_free_px": 17176,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 12941,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.7534350256171402
+    }
+  },
+  "traversal": {
+    "start_rectangle": 0,
+    "start_rectangle_coordinates": {
+      "x1": 0.0,
+      "y1": 58.5,
+      "x2": 85.0,
+      "y2": 65.5
+    },
+    "order": [
+      0,
+      23,
+      1,
+      23,
+      5,
+      12,
+      5,
+      18,
+      5,
+      19,
+      5,
+      22,
+      5,
+      23,
+      2,
+      11,
+      6,
+      13,
+      6,
+      17,
+      21,
+      14,
+      3,
+      14,
+      4,
+      14,
+      8,
+      14,
+      9,
+      14,
+      21,
+      15,
+      21,
+      16,
+      21,
+      20,
+      21,
+      10,
+      7
+    ],
+    "transition_count": 38,
+    "unique_rectangle_count": 24,
+    "revisit_count": 15,
+    "adjacency_edge_count": 115,
+    "total_rectangle_count": 24,
+    "reachable_rectangles": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "unreachable_rectangles": [],
+    "reachable_rectangle_count": 24,
+    "unreachable_rectangle_count": 0,
+    "reachable_rectangle_ratio": 1.0,
+    "all_rectangles_reachable": true,
+    "reachable_partition": {
+      "total_free_px": 17176,
+      "covered_free_px": 17176,
+      "uncovered_free_px": 0,
+      "overlap_free_px": 12941,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 1.0,
+      "free_overlap_ratio": 0.7534350256171402
+    }
+  },
+  "trajectory": {
+    "pose_count": 12292,
+    "sample_rate_hz": 2.0,
+    "sampled_pose_duration_seconds": 6145.5,
+    "duration_source": "continuous_motion_segments",
+    "duration_seconds": 5844.725596022144,
+    "work_duration_seconds": 1713.1324731113723,
+    "non_work_duration_seconds": 4131.593122910772,
+    "phase_duration_seconds": {
+      "vehicle_turn": 1903.3915964384018,
+      "entry": 294.325,
+      "arm_setup": 162.98659882663253,
+      "lane_change": 371.2746897936317,
+      "work": 1713.1324731113723,
+      "exit": 340.9529481414194,
+      "arm_retract": 6.9515230584968855,
+      "transition": 1051.7107666521836
+    },
+    "work_distance_m": 2096.0,
+    "actual_average_work_speed_mps": 1.2234897375993743,
+    "actual_max_work_speed_mps": 2.0,
+    "configured_speed_limit_mps": 2.0,
+    "work_speed_policy": "coverage_safe",
+    "arm_angular_velocity_limit_deg_s": 90.0,
+    "work_speed_limited": false
+  },
+  "coverage": {
+    "source": "parametric_swept_disc",
+    "partition_coverage_ratio": 1.0,
+    "total_free_px": 17176,
+    "covered_free_px": 14761,
+    "uncovered_free_px": 2415,
+    "coverage_ratio": 0.8593968327899395,
+    "covered_free_area_m2": 3690.25,
+    "execution_seconds_per_covered_m2": 1.583829170387411,
+    "covered_m2_per_execution_second": 0.6313812238698672,
+    "work_disc": {
+      "covered_free_px": 14761,
+      "uncovered_free_px": 2415,
+      "coverage_ratio": 0.8593968327899395
+    },
+    "full_trajectory_disc": {
+      "covered_free_px": 16442,
+      "uncovered_free_px": 734,
+      "coverage_ratio": 0.9572659524918491
+    },
+    "geometry": {
+      "method": "parametric_swept_disc",
+      "disc_radius_m": 0.75,
+      "arm_length_m": 1.2,
+      "pixel_criterion": "pixel_center",
+      "geometry_tolerance_m": 0.0375,
+      "sampling_rate_independent": true,
+      "motion_segment_count": 1355
+    }
+  },
+  "rectangles": [
+    {
+      "id": 0,
+      "x1": 0.0,
+      "y1": 58.5,
+      "x2": 85.0,
+      "y2": 65.5
+    },
+    {
+      "id": 1,
+      "x1": 0.0,
+      "y1": 50.5,
+      "x2": 85.0,
+      "y2": 57.5
+    },
+    {
+      "id": 2,
+      "x1": 0.0,
+      "y1": 37.5,
+      "x2": 85.0,
+      "y2": 44.5
+    },
+    {
+      "id": 3,
+      "x1": 0.0,
+      "y1": 19.5,
+      "x2": 51.0,
+      "y2": 26.5
+    },
+    {
+      "id": 4,
+      "x1": 0.0,
+      "y1": 6.5,
+      "x2": 51.0,
+      "y2": 13.5
+    },
+    {
+      "id": 5,
+      "x1": 0.0,
+      "y1": 45.5,
+      "x2": 85.0,
+      "y2": 49.5
+    },
+    {
+      "id": 6,
+      "x1": 0.0,
+      "y1": 33.5,
+      "x2": 85.0,
+      "y2": 36.5
+    },
+    {
+      "id": 7,
+      "x1": 6.0,
+      "y1": 0.0,
+      "x2": 51.0,
+      "y2": 5.5
+    },
+    {
+      "id": 8,
+      "x1": 0.0,
+      "y1": 27.5,
+      "x2": 51.0,
+      "y2": 31.5
+    },
+    {
+      "id": 9,
+      "x1": 0.0,
+      "y1": 14.5,
+      "x2": 51.0,
+      "y2": 18.5
+    },
+    {
+      "id": 10,
+      "x1": 28.5,
+      "y1": 0.0,
+      "x2": 33.5,
+      "y2": 65.5
+    },
+    {
+      "id": 11,
+      "x1": 38.5,
+      "y1": 0.0,
+      "x2": 43.5,
+      "y2": 65.5
+    },
+    {
+      "id": 12,
+      "x1": 71.0,
+      "y1": 33.5,
+      "x2": 85.0,
+      "y2": 65.5
+    },
+    {
+      "id": 13,
+      "x1": 45.0,
+      "y1": 0.0,
+      "x2": 51.0,
+      "y2": 65.5
+    },
+    {
+      "id": 14,
+      "x1": 18.5,
+      "y1": 0.0,
+      "x2": 27.5,
+      "y2": 65.5
+    },
+    {
+      "id": 15,
+      "x1": 0.0,
+      "y1": 6.5,
+      "x2": 5.0,
+      "y2": 65.5
+    },
+    {
+      "id": 16,
+      "x1": 12.5,
+      "y1": 0.0,
+      "x2": 17.5,
+      "y2": 65.5
+    },
+    {
+      "id": 17,
+      "x1": 35.0,
+      "y1": 0.0,
+      "x2": 37.5,
+      "y2": 65.5
+    },
+    {
+      "id": 18,
+      "x1": 65.0,
+      "y1": 33.5,
+      "x2": 70.0,
+      "y2": 65.5
+    },
+    {
+      "id": 19,
+      "x1": 55.0,
+      "y1": 33.5,
+      "x2": 60.0,
+      "y2": 65.5
+    },
+    {
+      "id": 20,
+      "x1": 6.0,
+      "y1": 0.0,
+      "x2": 11.0,
+      "y2": 65.5
+    },
+    {
+      "id": 21,
+      "x1": 0.0,
+      "y1": 32.5,
+      "x2": 51.0,
+      "y2": 36.5
+    },
+    {
+      "id": 22,
+      "x1": 61.0,
+      "y1": 33.5,
+      "x2": 63.5,
+      "y2": 65.5
+    },
+    {
+      "id": 23,
+      "x1": 45.0,
+      "y1": 33.5,
+      "x2": 53.5,
+      "y2": 65.5
+    }
+  ],
+  "runtime_seconds": {
+    "segmentation": 3.6029318338260055,
+    "traversal": 0.09194845799356699,
+    "pose_generation": 0.012487916741520166,
+    "rendering": 11.010736375115812,
+    "total": 17.980994750279933
+  },
+  "artifacts": {
+    "segmentation_image": {
+      "path": "experiments/fields2cover_comparison/results/parkingGraph/segmentation.png",
+      "bytes": 959,
+      "sha256": "a638e416cef1927ba9767dfde1b737dad25ea7351f4a842bb5216a2f962d21d2"
+    },
+    "traversal_image": {
+      "path": "experiments/fields2cover_comparison/results/parkingGraph/traversal_order.png",
+      "bytes": 222711,
+      "sha256": "4b661a80e7ffcb3285a3223c962c1239101acd853376188a46f704d82a846925"
+    },
+    "coverage_video": {
+      "path": "experiments/fields2cover_comparison/results/parkingGraph/coverage.mp4",
+      "bytes": 1855390,
+      "sha256": "dc595e07c37e9ea14bad98eeb245489159a85c61a8e399c0ce5c5881b1e0e070"
+    },
+    "coverage_image": {
+      "path": "experiments/fields2cover_comparison/results/parkingGraph/coverage_final.png",
+      "bytes": 2914,
+      "sha256": "e1421743ac23de7a1e4812e6db616c5ab3fe0fa5aaac9304fbbbe9933886de62"
+    },
+    "config_snapshot": {
+      "path": "experiments/fields2cover_comparison/results/parkingGraph/config_snapshot.json",
+      "bytes": 1888,
+      "sha256": "5f0eab47910fc087070381f7cda89a10bf6914b70076eba9253b4456ec6d58c6"
+    },
+    "metrics_json": {
+      "path": "experiments/fields2cover_comparison/results/parkingGraph/metrics.json"
+    }
+  }
+}

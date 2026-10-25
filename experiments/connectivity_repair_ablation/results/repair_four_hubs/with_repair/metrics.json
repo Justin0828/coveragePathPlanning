@@ -1,0 +1,336 @@
+{
+  "schema_version": "1.0",
+  "status": "completed",
+  "experiment": {
+    "name": "repair_four_hubs",
+    "started_at": "2026-07-10T02:59:49.140295+00:00",
+    "finished_at": "2026-07-10T02:59:51.169932+00:00",
+    "config": "experiments/connectivity_repair_ablation/configs/with_repair/experiment_repair_four_hubs.json",
+    "robot_config": "experiments/configs/robot_config_default.json",
+    "random_seed": 42
+  },
+  "input": {
+    "map": "experiments/connectivity_repair_ablation/maps/repair_four_hubs.png",
+    "map_sha256": "beb88c646ce3ccdcb73c113f64725e4504c12c8b184147b052863a99fa3948f0",
+    "map_shape_px": {
+      "height": 130,
+      "width": 190
+    },
+    "pixel_size_m": 0.5
+  },
+  "segmentation": {
+    "candidate_scan_strategy": "row_then_col",
+    "candidate_top_k_per_scanline": 20,
+    "scan_stage_order": [
+      "row",
+      "col"
+    ],
+    "row_candidate_count": 234,
+    "row_selected_count": 6,
+    "column_candidate_count": 58,
+    "column_selected_count": 5,
+    "candidate_count_total": 292,
+    "greedy_rectangle_count": 11,
+    "connectivity_candidate_count": 608,
+    "expanded_rectangle_count": 11,
+    "start_rectangle_before_connectivity": 0,
+    "start_rectangle_coordinates_before_connectivity": {
+      "x1": 5.0,
+      "y1": 38.0,
+      "x2": 29.0,
+      "y2": 57.0
+    },
+    "connectivity_strategy": "candidate_bridge",
+    "pre_repair_rectangles_sha256": "561c1b56805eca8206683364e4057497e2afeedf83d717631a425d20ec5110d3",
+    "component_count_before": 3,
+    "component_count_after": 1,
+    "component_sizes_before": [
+      4,
+      4,
+      3
+    ],
+    "component_sizes_after": [
+      12
+    ],
+    "fully_connected_before": false,
+    "fully_connected_after": true,
+    "connectivity_bridge_count": 1,
+    "connectivity_bridge_area_m2": 105.0,
+    "bridge_rectangles": [
+      {
+        "x1": 44.0,
+        "y1": 26.0,
+        "x2": 51.0,
+        "y2": 41.0
+      }
+    ],
+    "final_rectangle_count": 12,
+    "greedy_partition": {
+      "total_free_px": 9671,
+      "covered_free_px": 9456,
+      "uncovered_free_px": 215,
+      "overlap_free_px": 0,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.9777685864957089,
+      "free_overlap_ratio": 0.0
+    },
+    "expanded_partition": {
+      "total_free_px": 9671,
+      "covered_free_px": 9456,
+      "uncovered_free_px": 215,
+      "overlap_free_px": 0,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.9777685864957089,
+      "free_overlap_ratio": 0.0
+    },
+    "final_partition": {
+      "total_free_px": 9671,
+      "covered_free_px": 9456,
+      "uncovered_free_px": 215,
+      "overlap_free_px": 420,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.9777685864957089,
+      "free_overlap_ratio": 0.043428807775824634
+    }
+  },
+  "traversal": {
+    "start_rectangle": 0,
+    "start_rectangle_coordinates": {
+      "x1": 5.0,
+      "y1": 38.0,
+      "x2": 29.0,
+      "y2": 57.0
+    },
+    "order": [
+      0,
+      7,
+      0,
+      6,
+      2,
+      11,
+      4,
+      10,
+      4,
+      11,
+      5,
+      11,
+      3,
+      8,
+      3,
+      9,
+      1
+    ],
+    "transition_count": 16,
+    "unique_rectangle_count": 12,
+    "revisit_count": 5,
+    "adjacency_edge_count": 15,
+    "total_rectangle_count": 12,
+    "reachable_rectangles": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "unreachable_rectangles": [],
+    "reachable_rectangle_count": 12,
+    "unreachable_rectangle_count": 0,
+    "reachable_rectangle_ratio": 1.0,
+    "all_rectangles_reachable": true,
+    "reachable_partition": {
+      "total_free_px": 9671,
+      "covered_free_px": 9456,
+      "uncovered_free_px": 215,
+      "overlap_free_px": 420,
+      "covered_obstacle_px": 0,
+      "free_coverage_ratio": 0.9777685864957089,
+      "free_overlap_ratio": 0.043428807775824634
+    }
+  },
+  "trajectory": {
+    "pose_count": 3150,
+    "sample_rate_hz": 2.0,
+    "sampled_pose_duration_seconds": 1574.5,
+    "duration_source": "continuous_motion_segments",
+    "duration_seconds": 1495.6980342029733,
+    "work_duration_seconds": 607.8478695951308,
+    "non_work_duration_seconds": 887.8501646078425,
+    "phase_duration_seconds": {
+      "vehicle_turn": 570.5627489403291,
+      "entry": 45.099999999999994,
+      "arm_setup": 26.01690005004993,
+      "lane_change": 68.71198081782347,
+      "work": 607.8478695951308,
+      "exit": 50.148095664402,
+      "arm_retract": 4.70525145440824,
+      "transition": 122.60518768082949
+    },
+    "work_distance_m": 619.0,
+    "actual_average_work_speed_mps": 1.0183469104075291,
+    "actual_max_work_speed_mps": 2.0,
+    "configured_speed_limit_mps": 2.0,
+    "work_speed_policy": "coverage_safe",
+    "arm_angular_velocity_limit_deg_s": 90.0,
+    "work_speed_limited": false
+  },
+  "coverage": {
+    "source": "parametric_swept_disc",
+    "partition_coverage_ratio": 0.9777685864957089,
+    "total_free_px": 9671,
+    "covered_free_px": 7120,
+    "uncovered_free_px": 2551,
+    "coverage_ratio": 0.7362216937235032,
+    "covered_free_area_m2": 1780.0,
+    "execution_seconds_per_covered_m2": 0.8402797944960524,
+    "covered_m2_per_execution_second": 1.190079788363515,
+    "work_disc": {
+      "covered_free_px": 7120,
+      "uncovered_free_px": 2551,
+      "coverage_ratio": 0.7362216937235032
+    },
+    "full_trajectory_disc": {
+      "covered_free_px": 7940,
+      "uncovered_free_px": 1731,
+      "coverage_ratio": 0.8210112708096371
+    },
+    "geometry": {
+      "method": "parametric_swept_disc",
+      "disc_radius_m": 0.75,
+      "arm_length_m": 1.2,
+      "pixel_criterion": "pixel_center",
+      "geometry_tolerance_m": 0.0375,
+      "sampling_rate_independent": true,
+      "motion_segment_count": 367
+    }
+  },
+  "rectangles": [
+    {
+      "id": 0,
+      "x1": 5.0,
+      "y1": 38.0,
+      "x2": 29.0,
+      "y2": 57.0
+    },
+    {
+      "id": 1,
+      "x1": 66.0,
+      "y1": 38.0,
+      "x2": 90.0,
+      "y2": 57.0
+    },
+    {
+      "id": 2,
+      "x1": 5.0,
+      "y1": 7.0,
+      "x2": 29.0,
+      "y2": 26.0
+    },
+    {
+      "id": 3,
+      "x1": 66.0,
+      "y1": 7.0,
+      "x2": 90.0,
+      "y2": 26.0
+    },
+    {
+      "id": 4,
+      "x1": 35.0,
+      "y1": 29.0,
+      "x2": 60.0,
+      "y2": 36.0
+    },
+    {
+      "id": 5,
+      "x1": 44.0,
+      "y1": 36.0,
+      "x2": 51.0,
+      "y2": 41.0
+    },
+    {
+      "id": 6,
+      "x1": 29.0,
+      "y1": 16.0,
+      "x2": 37.0,
+      "y2": 25.0
+    },
+    {
+      "id": 7,
+      "x1": 29.0,
+      "y1": 39.0,
+      "x2": 37.0,
+      "y2": 48.0
+    },
+    {
+      "id": 8,
+      "x1": 58.0,
+      "y1": 16.0,
+      "x2": 66.0,
+      "y2": 25.0
+    },
+    {
+      "id": 9,
+      "x1": 58.0,
+      "y1": 39.0,
+      "x2": 66.0,
+      "y2": 48.0
+    },
+    {
+      "id": 10,
+      "x1": 44.0,
+      "y1": 23.0,
+      "x2": 51.0,
+      "y2": 29.0
+    },
+    {
+      "id": 11,
+      "x1": 44.0,
+      "y1": 26.0,
+      "x2": 51.0,
+      "y2": 41.0
+    }
+  ],
+  "runtime_seconds": {
+    "segmentation": 0.4828654997982085,
+    "traversal": 0.005382542032748461,
+    "pose_generation": 0.0015184166841208935,
+    "rendering": 0.9480007085949183,
+    "total": 2.029977290891111
+  },
+  "artifacts": {
+    "segmentation_image": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_four_hubs/with_repair/segmentation.png",
+      "bytes": 810,
+      "sha256": "3c095318f1b8eaf0f5f329bb02ad389bdfe759ed9816e785faf91d0654e80bca"
+    },
+    "traversal_image": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_four_hubs/with_repair/traversal_order.png",
+      "bytes": 162938,
+      "sha256": "d31929bc303b370bad6ac15112b35e7ddea9b37b0bb64de253f9ca27911621de"
+    },
+    "coverage_video": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_four_hubs/with_repair/coverage.mp4",
+      "bytes": 377875,
+      "sha256": "b5fdc7a6ee316a54d0f0239627ba65b726b5b518e7da6584cacf01395d402786"
+    },
+    "coverage_image": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_four_hubs/with_repair/coverage_final.png",
+      "bytes": 1871,
+      "sha256": "56ef96cf8c5f80e68e0772f1ec8a0ef8b147e7d347cd4346b4a3d505c15f67e0"
+    },
+    "config_snapshot": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_four_hubs/with_repair/config_snapshot.json",
+      "bytes": 2069,
+      "sha256": "61ef85cb74248e63d9b2ddc79d0b50c33c1fe7dd10070f2006434e89eb8d0cdf"
+    },
+    "metrics_json": {
+      "path": "experiments/connectivity_repair_ablation/results/repair_four_hubs/with_repair/metrics.json"
+    }
+  }
+}
