@@ -1,0 +1,10 @@
+{
+  "model": "centerline buffered by half the robot body width",
+  "body_width_m": 0.8,
+  "swept_area_m2": 2217.0964411860778,
+  "swept_area_outside_field_m2": 20.002713623842464,
+  "centerline_outside_field_length_m": 26.390694289553224,
+  "area_tolerance_m2": 1e-06,
+  "length_tolerance_m": 1e-06,
+  "collision_free": false
+}

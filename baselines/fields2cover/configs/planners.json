@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "planners": {
+    "f2c_full_field": {
+      "description": "Safety-buffered coverage with one headland swath for obstacle-aware connections.",
+      "headland_algorithm": "CONST",
+      "headland_swaths": 1,
+      "swath_algorithm": "BRUTE_FORCE",
+      "swath_objective": "N_SWATH_MOD",
+      "swath_angle_deg": 0.0,
+      "route_algorithm": "SHORTEST_ROUTE",
+      "path_algorithm": "DUBINS"
+    }
+  }
+}
