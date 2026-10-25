@@ -98,4 +98,4 @@ The paper is under review. Citation details will be added once it is published.
 
 ## License
 
-No license file has been added yet.
+This project is released under the MIT License; see [LICENSE](LICENSE).
